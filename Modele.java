@@ -9,13 +9,13 @@ public class Modele extends Observable {
         j = 0;
     }
 
-    public int getI() {
-        return i;
+    public void setPosition(int i, int j) {
+        this.i = i;
+        this.j = j;
+        setChanged();
+        notifyObservers();
     }
 
-    public int getJ() {
-        return j;
-    }
-
-    }
-    
+    public int getI() { return i; }
+    public int getJ() { return j; }
+}
