@@ -49,12 +49,4 @@ class Mafenetre extends JFrame implements Observer {
         setVisible(true);
     }
     
-
-
-    public static void main(String[] args) {
-        Mafenetre fenetre = new Mafenetre();
-        fenetre.build();
-    }
 }
-
-

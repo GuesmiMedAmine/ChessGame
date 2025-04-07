@@ -1,5 +1,6 @@
 package modele.plateau;
 
+import modele.jeu.Piece;
 import java.util.Observable;
 
 public class Plateau extends Observable {
@@ -14,6 +15,18 @@ public class Plateau extends Observable {
                 cases[x][y] = new Case(x, y);
             }
         }
+    }
+
+    public void reset() {
+        for (int x = 0; x < SIZE_X; x++) {
+            for (int y = 0; y < SIZE_Y; y++) {
+                cases[x][y].setPiece(null);
+            }
+        }
+    }
+
+    public void placerPiece(Piece p) {
+        cases[p.getX()][p.getY()].setPiece(p);
     }
 
     public Case[][] getCases() {

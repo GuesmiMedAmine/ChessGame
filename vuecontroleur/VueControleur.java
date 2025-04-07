@@ -1,15 +1,14 @@
 package vuecontroleur;
 
+import modele.jeu.*;
+import modele.plateau.*;
+
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import javax.swing.*;
-import java.awt.image.BufferedImage;
-import modele.jeu.Jeu;
-import modele.jeu.Piece;
-import modele.jeu.Roi;
-import modele.plateau.Case;
-import modele.plateau.Plateau;
+import java.util.HashMap;
+import java.util.Map;
 
 public class VueControleur extends JFrame {
     private Plateau plateau;
@@ -17,20 +16,40 @@ public class VueControleur extends JFrame {
     private final int sizeX = 8, sizeY = 8;
     private static final int pxCase = 50;
     private JLabel[][] tabJLabel;
-    private Case caseClic1;
-    private ImageIcon icoRoi;
+    private Case caseClic1 = null;
+    private Map<String, ImageIcon> icones;
 
     public VueControleur(Jeu _jeu) {
         jeu = _jeu;
         plateau = jeu.getPlateau();
+        plateau.addObserver((o, arg) -> mettreAJourAffichage());
         chargerLesIcones();
         placerLesComposantsGraphiques();
         mettreAJourAffichage();
     }
 
     private void chargerLesIcones() {
-        icoRoi = chargerIcone("Images/wK.png"); // Chemin de l'icône du roi
+        icones = new HashMap<>();
+        for (PieceType type : PieceType.values()) {
+            for (PieceColor color : PieceColor.values()) {
+                String nomFichier = "Images/" +
+                        (color == PieceColor.BLANC ? "w" : "b") +
+                        switch (type) {
+                            case ROI -> "K";
+                            case DAME -> "Q";
+                            case TOUR -> "R";
+                            case FOU -> "B";
+                            case CAVALIER -> "N";
+                            case PION -> "P";
+                        } + ".png";
+
+                ImageIcon icon = new ImageIcon(nomFichier);
+                Image img = icon.getImage().getScaledInstance(pxCase, pxCase, Image.SCALE_SMOOTH);
+                icones.put(type + "_" + color, new ImageIcon(img));
+            }
+        }
     }
+
 
     private ImageIcon chargerIcone(String urlIcone) {
         ImageIcon icon = new ImageIcon(urlIcone);
@@ -51,15 +70,25 @@ public class VueControleur extends JFrame {
             for (int x = 0; x < sizeX; x++) {
                 JLabel jlab = new JLabel();
                 jlab.setOpaque(true);
+                jlab.setHorizontalAlignment(SwingConstants.CENTER);
+                jlab.setVerticalAlignment(SwingConstants.CENTER);
                 tabJLabel[x][y] = jlab;
 
                 final int xx = x, yy = y;
                 jlab.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
-                        resetBoardColors();
-                        tabJLabel[xx][yy].setBackground(Color.YELLOW);
-                        caseClic1 = plateau.getCases()[xx][yy];
+                        Case clickedCase = plateau.getCases()[xx][yy];
+                        if (caseClic1 == null) {
+                            if (clickedCase.getPiece() != null) {
+                                caseClic1 = clickedCase;
+                                tabJLabel[xx][yy].setBackground(Color.YELLOW);
+                            }
+                        } else {
+                            jeu.demandeDeplacementPiece(caseClic1, clickedCase);
+                            caseClic1 = null;
+                            resetBoardColors();
+                        }
                     }
                 });
 
@@ -92,11 +121,14 @@ public class VueControleur extends JFrame {
                 Case c = plateau.getCases()[x][y];
                 tabJLabel[x][y].setIcon(null);
                 if (c.getPiece() != null) {
-                    if (c.getPiece() instanceof Roi) {
-                        tabJLabel[x][y].setIcon(icoRoi);
-                    }
+                    Piece p = c.getPiece();
+                    String key = p.getType() + "_" + p.getColor();
+                    tabJLabel[x][y].setIcon(icones.get(key));
                 }
+
+            }
             }
         }
+
     }
-}
+
