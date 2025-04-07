@@ -1,6 +1,6 @@
 import modele.jeu.Jeu;
 import vuecontroleur.VueControleur;
-
+//main
 public class Main {
     public static void main(String[] args) {
         Jeu jeu = new Jeu();

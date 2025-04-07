@@ -122,7 +122,7 @@ public class VueControleur extends JFrame {
                 tabJLabel[x][y].setIcon(null);
                 if (c.getPiece() != null) {
                     Piece p = c.getPiece();
-                    String key = p.getType() + "_" + p.getColor();
+                    String key = p.getType() + "_" + p.getCouleur();
                     tabJLabel[x][y].setIcon(icones.get(key));
                 }
 

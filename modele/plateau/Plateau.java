@@ -1,40 +1,36 @@
 package modele.plateau;
 
 import modele.jeu.Piece;
+
 import java.util.Observable;
 
 public class Plateau extends Observable {
-    public final int SIZE_X = 8;
-    public final int SIZE_Y = 8;
     private Case[][] cases;
 
-    public Plateau() {
-        cases = new Case[SIZE_X][SIZE_Y];
-        for (int x = 0; x < SIZE_X; x++) {
-            for (int y = 0; y < SIZE_Y; y++) {
+    public Plateau(int largeur, int hauteur) {
+        cases = new Case[largeur][hauteur];
+        for (int x = 0; x < largeur; x++) {
+            for (int y = 0; y < hauteur; y++) {
                 cases[x][y] = new Case(x, y);
             }
         }
     }
 
-    public void reset() {
-        for (int x = 0; x < SIZE_X; x++) {
-            for (int y = 0; y < SIZE_Y; y++) {
-                cases[x][y].setPiece(null);
-            }
-        }
-    }
-
-    public void placerPiece(Piece p) {
-        cases[p.getX()][p.getY()].setPiece(p);
+    public Case getCase(int x, int y) {
+        return cases[x][y];
     }
 
     public Case[][] getCases() {
         return cases;
     }
 
-    public void updatePlateau() {
+    public void setPiece(int x, int y, Piece piece) {
+        cases[x][y].setPiece(piece);
         setChanged();
         notifyObservers();
+    }
+
+    public Piece getPiece(int x, int y) {
+        return cases[x][y].getPiece();
     }
 }
