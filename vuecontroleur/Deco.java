@@ -2,39 +2,34 @@ package vuecontroleur;
 
 import java.awt.Color;
 
+/**
+ * Centralisation des couleurs et préfixes pour l'UI et les logs.
+ */
 public class Deco {
-    /**
-     * Couleur de base des cases (alternance beige/marron)
-     */
+    /** Couleur de base des cases (alternance beige/marron) */
     public static Color getCouleurCase(int x, int y) {
         return (x + y) % 2 == 0
-                ? new Color(240, 217, 181) // Beige clair
-                : new Color(181, 136, 99);  // Marron
+                ? new Color(240, 217, 181)
+                : new Color(181, 136, 99);
     }
 
-    /**
-     * Couleur de la case sélectionnée (jaune)
-     */
+    /** Couleur de la case sélectionnée (jaune doux) */
     public static Color getCouleurSelection() {
-        return new Color(255, 255, 102); // Jaune plus doux
+        return new Color(255, 255, 102);
     }
 
-    /**
-     * Couleur de surbrillance des déplacements valides (vert clair transparent)
-     */
+    /** Couleur de surbrillance des déplacements valides (vert clair transparent) */
     public static Color getCouleurHighlight() {
         return new Color(144, 238, 144, 150);
     }
 
-    /**
-     * Couleur de fond pour les messages d'erreur ou avertissements (rouge clair)
-     */
+    /** Couleur des messages d'erreur (rouge clair transparent) */
     public static Color getCouleurErreur() {
         return new Color(255, 102, 102, 180);
     }
 
+    /** Préfixe utilisé pour les logs de déplacement */
     public static String prefixeLog() {
         return "[Déplacement]";
     }
-
 }

@@ -60,31 +60,52 @@ public class Jeu {
         Piece piece = depart.getPiece();
         if (piece == null || piece.getColor() != joueurActuel) return;
 
-        // Vérifier si le mouvement est valide
-        if (piece.mouvementValide(arrivee.getX(), arrivee.getY(), plateau)) {
-            // Effectuer le déplacement
-            arrivee.setPiece(piece);
-            depart.setPiece(null);
-            piece.setPosition(arrivee.getX(), arrivee.getY());
+        // Vérifie mouvement classique (hors roque/en passant)
+        if (!piece.mouvementValide(arrivee.getX(), arrivee.getY(), plateau)) return;
 
-            // Changer de joueur
-            joueurActuel = (joueurActuel == PieceColor.BLANC)
-                    ? PieceColor.NOIR : PieceColor.BLANC;
-
-            // Mettre à jour l'historique
-            String notation = String.format("%s de %c%d à %c%d",
-                    piece.getType(),
-                    (char) ('a' + depart.getX()), depart.getY() + 1,
-                    (char) ('a' + arrivee.getX()), arrivee.getY() + 1);
-            historique.add(notation);
-
-            // Affichage dans la console avec style (optionnel)
-            System.out.println(Deco.prefixeLog() + " " + notation);
-
-            // Notifier l'UI
-            plateau.mettreAJour();
+        // Valide la légalité du coup (évitant un roi en échec)
+        if (!MoveValidator.isValidMove(plateau, depart, arrivee, joueurActuel)) {
+            System.out.println(Deco.prefixeLog() + " Coup illégal : roi en échec.");
+            return;
         }
+
+        // Gestion spéciale : prise en passant
+        if (MoveValidator.isEnPassant(depart, arrivee, plateau)) {
+            Case capture = MoveValidator.getEnPassantCaptureCase(depart, arrivee);
+            capture.setPiece(null);
+        }
+
+        // Gestion spéciale : roque
+        if (MoveValidator.isCastling(depart, arrivee)) {
+            MoveValidator.executeCastling(plateau, depart, arrivee);
+        }
+
+        // Déplacement normal
+        arrivee.setPiece(piece);
+        depart.setPiece(null);
+        piece.setPosition(arrivee.getX(), arrivee.getY());
+
+        // Promotion automatique
+        if (MoveValidator.isPromotion(piece, arrivee)) {
+            Piece promoted = MoveValidator.executePromotion(piece, arrivee);
+            arrivee.setPiece(promoted);
+        }
+
+        // Mise à jour du joueur
+        joueurActuel = (joueurActuel == PieceColor.BLANC) ? PieceColor.NOIR : PieceColor.BLANC;
+
+        // Historique et affichage
+        String notation = String.format("%s de %c%d à %c%d",
+                piece.getType(),
+                (char) ('a' + depart.getX()), depart.getY() + 1,
+                (char) ('a' + arrivee.getX()), arrivee.getY() + 1);
+        historique.add(notation);
+        System.out.println(Deco.prefixeLog() + " " + notation);
+
+        // Rafraîchissement UI
+        plateau.mettreAJour();
     }
+
     /**
      * Stocke la représentation textuelle du coup saisi par l'utilisateur.
      */
