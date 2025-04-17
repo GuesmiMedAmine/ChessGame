@@ -4,7 +4,7 @@ import modele.plateau.Case;
 import modele.plateau.Plateau;
 import java.util.ArrayList;
 import java.util.List;
-
+import vuecontroleur.Deco;
 public class Jeu {
     private Plateau plateau;
     private List<String> historique;
@@ -68,14 +68,20 @@ public class Jeu {
             piece.setPosition(arrivee.getX(), arrivee.getY());
 
             // Changer de joueur
-            joueurActuel = (joueurActuel == PieceColor.BLANC) ? PieceColor.NOIR : PieceColor.BLANC;
+            joueurActuel = (joueurActuel == PieceColor.BLANC)
+                    ? PieceColor.NOIR : PieceColor.BLANC;
 
             // Mettre à jour l'historique
-            historique.add(String.format("%s de %c%d à %c%d",
+            String notation = String.format("%s de %c%d à %c%d",
                     piece.getType(),
                     (char) ('a' + depart.getX()), depart.getY() + 1,
-                    (char) ('a' + arrivee.getX()), arrivee.getY() + 1));
+                    (char) ('a' + arrivee.getX()), arrivee.getY() + 1);
+            historique.add(notation);
 
+            // Affichage dans la console avec style (optionnel)
+            System.out.println(Deco.prefixeLog() + " " + notation);
+
+            // Notifier l'UI
             plateau.mettreAJour();
         }
     }

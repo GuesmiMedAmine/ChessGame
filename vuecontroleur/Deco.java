@@ -33,4 +33,8 @@ public class Deco {
         return new Color(255, 102, 102, 180);
     }
 
+    public static String prefixeLog() {
+        return "[Déplacement]";
+    }
+
 }
