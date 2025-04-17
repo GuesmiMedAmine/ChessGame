@@ -165,8 +165,7 @@ public class VueControleur extends JFrame {
                     casesUI[destX][destY].setIcon(null);
 
                     // on colore en vert
-                    casesUI[destX][destY]
-                            .setBackground(new Color(144, 238, 144, 150));
+                    casesUI[destX][destY].setBackground(Deco.getCouleurHighlight());
                 }
             }
         }

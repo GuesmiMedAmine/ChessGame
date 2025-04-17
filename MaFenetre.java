@@ -4,7 +4,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Observer;
 import java.util.Observable;
-
+import vuecontroleur.Deco;
 
 class Mafenetre extends JFrame implements Observer {
 
@@ -24,12 +24,7 @@ class Mafenetre extends JFrame implements Observer {
             for (int j = 0; j < 8; j++) {
                 JLabel jl = new JLabel();
                 jl.setOpaque(true);
-                if ((i + j) % 2 == 0) {
-                    jl.setBackground(Color.WHITE);
-                } else {
-                    jl.setBackground(Color.BLACK);
-                }
-
+                jl.setBackground(Deco.getCouleurCase(i, j));
                 final int ii =i;
                 final int jj =j;
                 jl.addMouseListener(new MouseAdapter() {
