@@ -9,8 +9,8 @@ public class Deco {
     /** Couleur de base des cases (alternance beige/marron) */
     public static Color getCouleurCase(int x, int y) {
         return (x + y) % 2 == 0
-                ? new Color(240, 217, 181)
-                : new Color(181, 136, 99);
+                ? new Color(250, 238, 238)
+                : new Color(137, 191, 97);
     }
 
     /** Couleur de la case sélectionnée (jaune doux) */
