@@ -9,7 +9,7 @@ import java.util.Observable;
 class Mafenetre extends JFrame implements Observer {
 
     @Override
-    public void update(Observable o, Object arg) {    
+    public void update(Observable o, Object arg) {
     }
 
     public void build() {
@@ -23,7 +23,7 @@ class Mafenetre extends JFrame implements Observer {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 JLabel jl = new JLabel();
-                jl.setOpaque(true); 
+                jl.setOpaque(true);
                 if ((i + j) % 2 == 0) {
                     jl.setBackground(Color.WHITE);
                 } else {
@@ -41,12 +41,12 @@ class Mafenetre extends JFrame implements Observer {
                         m.j =jj;
                     }
                 });
-                jp.add(jl); 
+                jp.add(jl);
             }
         }
 
         // Rendre la fenêtre visible
         setVisible(true);
     }
-    
+
 }

@@ -1,113 +1,101 @@
 package modele.jeu;
 
-import modele.plateau.Plateau;
 import modele.plateau.Case;
-
+import modele.plateau.Plateau;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Jeu {
     private Plateau plateau;
-    private PieceColor joueurCourant;
-    private List<String> historiqueCoups;
+    private List<String> historique;
+    private PieceColor joueurActuel;
     private String coupBuffer;
-    private Thread boucleJeu;
 
     public Jeu() {
-        plateau = new Plateau(8, 8);
-        joueurCourant = PieceColor.BLANC;
-        historiqueCoups = new ArrayList<>();
-        initialiserPlateauComplet();
-        startBoucleJeu();
+        initialiserJeu();
     }
 
-    private void initialiserPlateauComplet() {
+    private void initialiserJeu() {
+        plateau = new Plateau();
+        historique = new ArrayList<>();
+        joueurActuel = PieceColor.BLANC;
+
+        placerPiece(0, 0, PieceType.TOUR, PieceColor.BLANC);
+        placerPiece(1, 0, PieceType.CAVALIER, PieceColor.BLANC);
+        placerPiece(2, 0, PieceType.FOU, PieceColor.BLANC);
+        placerPiece(3, 0, PieceType.DAME, PieceColor.BLANC);
+        placerPiece(4, 0, PieceType.ROI, PieceColor.BLANC);
+        placerPiece(5, 0, PieceType.FOU, PieceColor.BLANC);
+        placerPiece(6, 0, PieceType.CAVALIER, PieceColor.BLANC);
+        placerPiece(7, 0, PieceType.TOUR, PieceColor.BLANC);
+
+        // Pions blancs (rangée 1)
         for (int x = 0; x < 8; x++) {
-            plateau.setPiece(x, 1, new Piece(PieceType.PION, PieceColor.NOIR));
-            plateau.setPiece(x, 6, new Piece(PieceType.PION, PieceColor.BLANC));
+            placerPiece(x, 1, PieceType.PION, PieceColor.BLANC);
         }
 
-        PieceType[] ordre = {PieceType.TOUR, PieceType.CAVALIER, PieceType.FOU, PieceType.DAME,
-                PieceType.ROI, PieceType.FOU, PieceType.CAVALIER, PieceType.TOUR};
-
+        // Pions noirs (rangée 6)
         for (int x = 0; x < 8; x++) {
-            plateau.setPiece(x, 0, new Piece(ordre[x], PieceColor.NOIR));
-            plateau.setPiece(x, 7, new Piece(ordre[x], PieceColor.BLANC));
+            placerPiece(x, 6, PieceType.PION, PieceColor.NOIR);
+        }
+
+        // Pièces noires (rangée 7)
+        placerPiece(0, 7, PieceType.TOUR, PieceColor.NOIR);
+        placerPiece(1, 7, PieceType.CAVALIER, PieceColor.NOIR);
+        placerPiece(2, 7, PieceType.FOU, PieceColor.NOIR);
+        placerPiece(3, 7, PieceType.DAME, PieceColor.NOIR);
+        placerPiece(4, 7, PieceType.ROI, PieceColor.NOIR);
+        placerPiece(5, 7, PieceType.FOU, PieceColor.NOIR);
+        placerPiece(6, 7, PieceType.CAVALIER, PieceColor.NOIR);
+        placerPiece(7, 7, PieceType.TOUR, PieceColor.NOIR);
+
+        plateau.mettreAJour();
+    }
+
+    private void placerPiece(int x, int y, PieceType type, PieceColor color) {
+        plateau.getCase(x, y).setPiece(new Piece(x, y, type, color));
+    }
+
+    public void deplacerPiece(Case depart, Case arrivee) {
+        Piece piece = depart.getPiece();
+        if (piece == null || piece.getColor() != joueurActuel) return;
+
+        // Vérifier si le mouvement est valide
+        if (piece.mouvementValide(arrivee.getX(), arrivee.getY(), plateau)) {
+            // Effectuer le déplacement
+            arrivee.setPiece(piece);
+            depart.setPiece(null);
+            piece.setPosition(arrivee.getX(), arrivee.getY());
+
+            // Changer de joueur
+            joueurActuel = (joueurActuel == PieceColor.BLANC) ? PieceColor.NOIR : PieceColor.BLANC;
+
+            // Mettre à jour l'historique
+            historique.add(String.format("%s de %c%d à %c%d",
+                    piece.getType(),
+                    (char) ('a' + depart.getX()), depart.getY() + 1,
+                    (char) ('a' + arrivee.getX()), arrivee.getY() + 1));
+
+            plateau.mettreAJour();
         }
     }
-
-    public Plateau getPlateau() {
-        return plateau;
-    }
-
-    public PieceColor getJoueurCourant() {
-        return joueurCourant;
-    }
-
-    public void changerJoueur() {
-        joueurCourant = (joueurCourant == PieceColor.BLANC) ? PieceColor.NOIR : PieceColor.BLANC;
-    }
-
-    public void setCoup(String coup) {
-        historiqueCoups.add(coup);
-    }
-
-    public String getCoup() {
-        if (historiqueCoups.isEmpty()) return null;
-        return historiqueCoups.get(historiqueCoups.size() - 1);
-    }
-
-    public List<String> getHistoriqueCoups() {
-        return historiqueCoups;
-    }
-
+    /**
+     * Stocke la représentation textuelle du coup saisi par l'utilisateur.
+     */
     public void setCoupBuffer(String coup) {
         this.coupBuffer = coup;
     }
 
-    private void startBoucleJeu() {
-        boucleJeu = new Thread(() -> {
-            while (true) {
-                if (coupBuffer != null) {
-                    traiterCoup(coupBuffer);
-                    coupBuffer = null;
-                }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        });
-        boucleJeu.start();
+    /**
+     * Récupère la représentation textuelle du dernier coup saisi.
+     */
+    public String getCoupBuffer() {
+        return this.coupBuffer;
     }
 
-    private void traiterCoup(String coup) {
-        if (coup.length() != 4) return;
 
-        int sx = coup.charAt(0) - 'a';
-        int sy = 8 - Character.getNumericValue(coup.charAt(1));
-        int dx = coup.charAt(2) - 'a';
-        int dy = 8 - Character.getNumericValue(coup.charAt(3));
-
-        Case source = plateau.getCase(sx, sy);
-        Case destination = plateau.getCase(dx, dy);
-
-        demandeDeplacementPiece(source, destination);
-    }
-
-    public boolean demandeDeplacementPiece(Case source, Case destination) {
-        Piece piece = source.getPiece();
-        if (piece == null) return false;
-
-        String coup = "" + (char)('a' + source.getX()) + (8 - source.getY())
-                + (char)('a' + destination.getX()) + (8 - destination.getY());
-        setCoup(coup);
-
-        destination.setPiece(piece);
-        source.setPiece(null);
-
-        changerJoueur();
-        return true;
-    }
+    // Getters
+    public Plateau getPlateau() { return plateau; }
+    public PieceColor getJoueurActuel() { return joueurActuel; }
 }
+
