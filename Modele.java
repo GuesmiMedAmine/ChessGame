@@ -1,13 +1,10 @@
+
 import java.util.Observable;
 
 public class Modele extends Observable {
-    public int i;
-    public int j;
+    private int i, j;
 
-    public Modele() {
-        i = 0;
-        j = 0;
-    }
+    public Modele() { i = 0; j = 0; }
 
     public void setPosition(int i, int j) {
         this.i = i;

@@ -1,180 +1,100 @@
 package vuecontroleur;
 
 import modele.jeu.Jeu;
-import modele.jeu.Piece;
-import modele.jeu.PieceColor;
-import modele.jeu.PieceType;
+import modele.pieces.Piece;
 import modele.plateau.Case;
-import modele.plateau.Plateau;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
-public class VueControleur extends JFrame {
+public class VueControleur extends JPanel {
     private final Jeu jeu;
-    private final JLabel[][] casesUI;
-    private Case caseSelectionnee;
+    private final JButton[][] grid;
+    private Case selectedCase;
+    private List<Case> validMoves = new ArrayList<>();
 
-    // Champ pour stocker toutes les icônes
-    private final Map<String, ImageIcon> images = new HashMap<>();
-
-    public VueControleur(Jeu jeu) {
-        this.jeu = jeu;
-        this.casesUI = new JLabel[Plateau.SIZE][Plateau.SIZE];
-        configurerUI();
-        chargerImages();
-        // Quand le modèle change, on rafraîchit les icônes
-        jeu.getPlateau().addObserver((o, arg) -> actualiserUI());
-        actualiserUI();
+    public VueControleur() {
+        jeu = new Jeu();
+        grid = new JButton[8][8];
+        setLayout(new GridLayout(8, 8));
+        initialiserUI();
+        rafraichirUI();
     }
 
-    private void configurerUI() {
-        setTitle("Jeu d'échecs - POO Lyon1");
-        setLayout(new GridLayout(Plateau.SIZE, Plateau.SIZE));
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setResizable(false);
+    private void initialiserUI() {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                JButton btn = new JButton();
+                btn.setPreferredSize(new Dimension(80, 80)); // Taille fixe
+                btn.setHorizontalAlignment(SwingConstants.CENTER);
+                btn.setVerticalAlignment(SwingConstants.CENTER);
 
-        for (int y = 0; y < Plateau.SIZE; y++) {
-            for (int x = 0; x < Plateau.SIZE; x++) {
-                JLabel lbl = new JLabel();
-                lbl.setOpaque(true);
-                lbl.setBackground(Deco.getCouleurCase(x, y));
-                lbl.setPreferredSize(new Dimension(60, 60));
-                lbl.setHorizontalAlignment(SwingConstants.CENTER);
-
-                final int fx = x, fy = y;
-                lbl.addMouseListener(new MouseAdapter() {
+                // Gestion des clics
+                final int x = i;
+                final int y = j;
+                btn.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
-                        gererClicCase(fx, fy);
+                        gererClicCase(x, y);
                     }
                 });
 
-                casesUI[x][y] = lbl;
-                add(lbl);
+                grid[i][j] = btn;
+                add(btn);
             }
         }
-        pack();
-    }
-
-    private void chargerImages() {
-        // On attend les fichiers sous src/main/resources/images/
-        String[] couleurs = {"w", "b"};              // w = blanc, b = noir
-        String[] types    = {"K", "Q", "R", "B", "N", "P"};
-
-        for (String coul : couleurs) {
-            for (String t : types) {
-                String key      = coul + t;             // ex. "wK"
-                String path     = "/images/" + key + ".png";
-                URL url         = getClass().getResource(path);
-                if (url == null) {
-                    System.err.println(" Icône introuvable: " + path);
-                    continue;
-                }
-                ImageIcon ico   = new ImageIcon(url);
-                Image img       = ico.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
-                images.put(key, new ImageIcon(img));
-            }
-        }
-
-        // Débogage : affiche ce qui a été chargé
-        System.out.println("Images chargées : " + images.keySet());
-    }
-
-    private void actualiserUI() {
-        for (int x = 0; x < Plateau.SIZE; x++) {
-            for (int y = 0; y < Plateau.SIZE; y++) {
-                Piece p = jeu.getPlateau().getCase(x, y).getPiece();
-                casesUI[x][y].setIcon(null);
-                if (p != null) {
-                    String clef = clefPourPiece(p);
-                    ImageIcon ico = images.get(clef);
-                    casesUI[x][y].setIcon(ico);
-                } else {
-                    casesUI[x][y].setIcon(null);
-                }
-            }
-        }
-        repaint();
-    }
-
-    private void actualiserCouleurs() {
-        for (int x = 0; x < Plateau.SIZE; x++) {
-            for (int y = 0; y < Plateau.SIZE; y++) {
-                casesUI[x][y].setBackground(Deco.getCouleurCase(x, y));
-            }
-        }
-    }
-
-    private String clefPourPiece(Piece piece) {
-        String coul = (piece.getColor() == PieceColor.BLANC) ? "w" : "b";
-        String sym;
-        switch (piece.getType()) {
-            case ROI:      sym = "K"; break;
-            case DAME:     sym = "Q"; break;
-            case TOUR:     sym = "R"; break;
-            case FOU:      sym = "B"; break;
-            case CAVALIER: sym = "N"; break;
-            case PION:     sym = "P"; break;
-            default:       sym = "?"; break;
-        }
-        return coul + sym;
     }
 
     private void gererClicCase(int x, int y) {
-        Case caseCourante = jeu.getPlateau().getCase(x, y);
+        Case clickedCase = jeu.getPlateau().getCase(x, y);
 
-        if (caseSelectionnee == null) {
-            // Premier clic : on nettoie d'abord tout l'affichage
-            actualiserUI();        // remet toutes les icônes en place
-            actualiserCouleurs();  // remet toutes les cases à leur couleur origine
-
-            if (caseCourante.getPiece() != null
-                    && caseCourante.getPiece().getColor() == jeu.getJoueurActuel()) {
-
-                // On marque la sélection
-                caseSelectionnee = caseCourante;
-                casesUI[x][y].setBackground(Deco.getCouleurSelection());
-
-                // Puis on surligne les déplacements possibles
-                highlightValidMoves(x, y);
+        if (selectedCase == null) {
+            // Sélection d'une pièce
+            if (clickedCase.getPiece() != null &&
+                    clickedCase.getPiece().getColor() == jeu.getJoueurActuel()) {
+                selectedCase = clickedCase;
+                validMoves = selectedCase.getPiece().getCasesAccessibles();
             }
         } else {
-            // Deuxième clic : tentative de déplacement
-            if (caseCourante != caseSelectionnee) {
-                jeu.deplacerPiece(caseSelectionnee, caseCourante);
+            // Déplacement
+            if (validMoves.contains(clickedCase)) {
+                jeu.jouerCoup(selectedCase, clickedCase);
             }
-            caseSelectionnee = null;
-            actualiserCouleurs();
+            selectedCase = null;
+            validMoves.clear();
         }
+        rafraichirUI();
     }
 
-    private void highlightValidMoves(int x, int y) {
-        Piece piece = jeu.getPlateau().getCase(x, y).getPiece();
-        if (piece == null) return;
+    private void rafraichirUI() {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                JButton btn = grid[i][j];
+                Case c = jeu.getPlateau().getCase(i, j);
 
-        for (int destX = 0; destX < Plateau.SIZE; destX++) {
-            for (int destY = 0; destY < Plateau.SIZE; destY++) {
-                if (piece.mouvementValide(destX, destY, jeu.getPlateau())) {
-                    // (optionnel) supprimer l'icône si par hasard
-                    casesUI[destX][destY].setIcon(null);
+                // Réinitialisation de l'apparence
+                btn.setBackground((i + j) % 2 == 0 ? new Color(238, 238, 210) : new Color(118, 150, 86));
+                btn.setIcon(null);
 
-                    // on colore en vert
-                    casesUI[destX][destY].setBackground(Deco.getCouleurHighlight());
+                // Mise à jour de l'icône
+                if (c.getPiece() != null) {
+                    ImageIcon icon = new ImageIcon(getClass().getResource(c.getPiece().getImagePath()));
+                    Image img = icon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+                    btn.setIcon(new ImageIcon(img));
+                }
+
+                // Surbrillance
+                if (selectedCase != null && selectedCase.equals(c)) {
+                    btn.setBackground(new Color(255, 255, 0, 150)); // Jaune transparent
+                }
+                else if (validMoves.contains(c)) {
+                    btn.setBackground(new Color(0, 255, 0, 150)); // Vert transparent
                 }
             }
         }
-        // on force un repaint complet
         repaint();
     }
-
-
-
 }
-
-

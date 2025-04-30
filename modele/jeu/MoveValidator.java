@@ -1,80 +1,52 @@
 package modele.jeu;
 
+import modele.deco.*;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
+import modele.pieces.*;
 
 public class MoveValidator {
+    public static boolean isValid(Piece p, Case tgt, Plateau plat) {
+        // Vérification de base
+        if (!p.getCasesAccessibles().contains(tgt)) return false;
 
-    public static boolean isValidMove(Plateau plateau, Case depart, Case arrivee, PieceColor joueur) {
-        // Clone du plateau pour simuler le coup
-        Piece piece = depart.getPiece();
-        Piece ancienneCible = arrivee.getPiece();
-
-        arrivee.setPiece(piece);
-        depart.setPiece(null);
-
-        boolean roiEnEchec = plateau.roiEnEchec(joueur);
-
-        // On restaure le plateau
-        depart.setPiece(piece);
-        arrivee.setPiece(ancienneCible);
-
-        return !roiEnEchec;
-    }
-
-    public static boolean isEnPassant(Case depart, Case arrivee, Plateau plateau) {
-        Piece piece = depart.getPiece();
-        if (piece.getType() != PieceType.PION) return false;
-
-        int dx = arrivee.getX() - depart.getX();
-        int dy = arrivee.getY() - depart.getY();
-
-        // Doit être une diagonale
-        if (Math.abs(dx) != 1 || Math.abs(dy) != 1) return false;
-
-        Case caseCible = plateau.getCase(arrivee.getX(), depart.getY());
-        Piece pieceCible = caseCible.getPiece();
-
-        if (pieceCible != null && pieceCible.getType() == PieceType.PION && pieceCible.getColor() != piece.getColor()) {
-            // TODO : Vérifier que ce pion a bougé de 2 cases au tour précédent
-            return true; // Hypothèse simple
+        // Vérification spéciale pour pion
+        if (p instanceof Pion) {
+            return validerMouvementPion((Pion)p, tgt, plat);
         }
 
-        return false;
-    }
-
-    public static Case getEnPassantCaptureCase(Case depart, Case arrivee) {
-        return new Case(arrivee.getX(), depart.getY());
-    }
-
-    public static boolean isCastling(Case depart, Case arrivee) {
-        Piece piece = depart.getPiece();
-        if (piece == null || piece.getType() != PieceType.ROI) return false;
-
-        int dx = arrivee.getX() - depart.getX();
-        return depart.getY() == arrivee.getY() && Math.abs(dx) == 2;
-    }
-
-    public static void executeCastling(Plateau plateau, Case depart, Case arrivee) {
-        int y = depart.getY();
-        if (arrivee.getX() == 6) { // petit roque
-            Piece tour = plateau.getCase(7, y).getPiece();
-            plateau.getCase(5, y).setPiece(tour);
-            plateau.getCase(7, y).setPiece(null);
-            tour.setPosition(5, y);
-        } else if (arrivee.getX() == 2) { // grand roque
-            Piece tour = plateau.getCase(0, y).getPiece();
-            plateau.getCase(3, y).setPiece(tour);
-            plateau.getCase(0, y).setPiece(null);
-            tour.setPosition(3, y);
+        // Vérification spéciale pour roque
+        if (p instanceof Roi && Math.abs(tgt.getX() - p.getX()) == 2) {
+            return validerRoque((Roi)p, tgt, plat);
         }
+
+        return true;
     }
 
-    public static boolean isPromotion(Piece piece, Case arrivee) {
-        return piece.getType() == PieceType.PION && (arrivee.getY() == 0 || arrivee.getY() == 7);
+    private static boolean validerMouvementPion(Pion pion, Case tgt, Plateau plat) {
+        // Logique de prise en passant
+        if (Math.abs(tgt.getX() - pion.getX()) == 1 && tgt.getPiece() == null) {
+            return checkEnPassant(pion, tgt, plat);
+        }
+        return true;
     }
 
-    public static Piece executePromotion(Piece piece, Case arrivee) {
-        return new Piece(arrivee.getX(), arrivee.getY(), PieceType.DAME, piece.getColor());
+    private static boolean checkEnPassant(Pion pion, Case tgt, Plateau plat) {
+        int direction = pion.getColor() == PieceColor.WHITE ? 1 : -1;
+        Case caseAdjacente = plat.getCase(tgt.getX(), pion.getY());
+        Piece pieceAdjacente = caseAdjacente.getPiece();
+
+        return pieceAdjacente instanceof Pion &&
+                ((Pion)pieceAdjacente).isPriseEnPassantPossible();
+    }
+
+    private static boolean validerRoque(Roi roi, Case tgt, Plateau plat) {
+        // Implémentation simplifiée
+        int direction = tgt.getX() > roi.getX() ? 1 : -1;
+        Case tourCase = plat.getCase(direction == 1 ? 7 : 0, roi.getY());
+
+        return tourCase.getPiece() instanceof Tour &&
+                !((Tour)tourCase.getPiece()).hasMoved() &&
+                !roi.hasMoved();
     }
 }

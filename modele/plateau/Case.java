@@ -1,6 +1,6 @@
 package modele.plateau;
 
-import modele.jeu.Piece;
+import modele.pieces.Piece;
 
 public class Case {
     private final int x, y;
@@ -9,6 +9,14 @@ public class Case {
     public Case(int x, int y) {
         this.x = x;
         this.y = y;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Case aCase = (Case) o;
+        return getX() == aCase.getX() && getY() == aCase.getY();
     }
 
     public int getX() { return x; }
