@@ -1,7 +1,6 @@
 package vuecontroleur;
 
 import modele.jeu.Jeu;
-import modele.pieces.Piece;
 import modele.plateau.Case;
 import javax.swing.*;
 import java.awt.*;

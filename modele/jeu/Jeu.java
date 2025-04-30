@@ -60,27 +60,84 @@ public class Jeu {
             return plateau;
         }
 
-        public boolean jouerCoup (Case depart, Case arrivee){
-            if (!depart.getPiece().getCasesAccessibles().contains(arrivee)) return false;
+    public boolean jouerCoup(Case depart, Case arrivee) {
+        if (depart.getPiece() == null) return false;
+        Piece piece = depart.getPiece();
 
-            // Exécution du coup
-            Coup coup = new Coup(depart.getPiece(), arrivee);
-            historique.add(coup);
+        // Validation globale avec MoveValidator
+        if (!MoveValidator.isValid(piece, arrivee, plateau)) return false;
 
-            arrivee.setPiece(depart.getPiece());
-            depart.setPiece(null);
-            arrivee.getPiece().setPosition(arrivee.getX(), arrivee.getY());
+        // Vérifier les cas spéciaux
+        boolean isRoque = false;
+        boolean isEnPassant = false;
 
-            // Gestion spéciale prise en passant
-            if (arrivee.getPiece() instanceof Pion) {
-                ((Pion) arrivee.getPiece()).setPriseEnPassantPossible(false);
-            }
-
-            joueurActuel = (joueurActuel == PieceColor.WHITE) ?
-                    PieceColor.BLACK : PieceColor.WHITE;
-
-            return true;
+        if (piece instanceof Roi && Math.abs(arrivee.getX() - depart.getX()) == 2) {
+            isRoque = MoveValidator.validerRoque((Roi) piece, arrivee, plateau);
         }
+        else if (piece instanceof Pion) {
+            isEnPassant = MoveValidator.validerPriseEnPassant((Pion) piece, arrivee, plateau);
+        }
+
+        // Création du coup avec les flags
+        Coup coup = new Coup(piece, arrivee, isRoque, isEnPassant);
+        historique.add(coup);
+
+        // Exécution du mouvement spécial
+        if (isRoque) {
+            executerRoque((Roi) piece, arrivee);
+        }
+        else if (isEnPassant) {
+            executerPriseEnPassant((Pion) piece, arrivee);
+        }
+        else {
+            // Déplacement standard
+            arrivee.setPiece(piece);
+            depart.setPiece(null);
+            piece.setPosition(arrivee.getX(), arrivee.getY());
+        }
+
+        // Gestion des états spéciaux
+        if (piece instanceof Pion && Math.abs(arrivee.getY() - depart.getY()) == 2) {
+            ((Pion) piece).setPriseEnPassantPossible(true);
+        }
+
+        // Log et changement de joueur
+        System.out.println(coup);
+        joueurActuel = (joueurActuel == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
+        return true;
+    }
+
+    private void executerRoque(Roi roi, Case arrivee) {
+        // Déplacement du roi
+        arrivee.setPiece(roi);
+        roi.getPlateau().getCase(roi.getX(), roi.getY()).setPiece(null);
+        roi.setPosition(arrivee.getX(), arrivee.getY());
+
+        // Déplacement de la tour
+        int direction = arrivee.getX() > 4 ? 1 : -1;
+        int rookStartX = direction == 1 ? 7 : 0;
+        int rookEndX = direction == 1 ? 5 : 3;
+
+        Case rookStart = roi.getPlateau().getCase(rookStartX, roi.getY());
+        Case rookEnd = roi.getPlateau().getCase(rookEndX, roi.getY());
+
+        Tour tour = (Tour) rookStart.getPiece();
+        rookEnd.setPiece(tour);
+        rookStart.setPiece(null);
+        tour.setPosition(rookEndX, roi.getY());
+    }
+
+    private void executerPriseEnPassant(Pion pion, Case arrivee) {
+        // Capture du pion adverse
+        int direction = pion.getColor() == PieceColor.WHITE ? -1 : 1;
+        Case caseCapture = pion.getPlateau().getCase(arrivee.getX(), arrivee.getY() + direction);
+        caseCapture.setPiece(null);
+
+        // Déplacement du pion
+        arrivee.setPiece(pion);
+        pion.getPlateau().getCase(pion.getX(), pion.getY()).setPiece(null);
+        pion.setPosition(arrivee.getX(), arrivee.getY());
+    }
         public PieceColor getJoueurActuel() {
             return joueurActuel;
     }

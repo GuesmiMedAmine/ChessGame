@@ -1,52 +1,85 @@
 package modele.jeu;
 
-import modele.deco.*;
+
 import modele.plateau.Case;
 import modele.plateau.Plateau;
 import modele.pieces.*;
 
 public class MoveValidator {
     public static boolean isValid(Piece p, Case tgt, Plateau plat) {
-        // Vérification de base
-        if (!p.getCasesAccessibles().contains(tgt)) return false;
-
-        // Vérification spéciale pour pion
-        if (p instanceof Pion) {
-            return validerMouvementPion((Pion)p, tgt, plat);
-        }
-
-        // Vérification spéciale pour roque
+        // Vérifications spéciales avant la validation standard
         if (p instanceof Roi && Math.abs(tgt.getX() - p.getX()) == 2) {
             return validerRoque((Roi)p, tgt, plat);
         }
 
-        return true;
-    }
-
-    private static boolean validerMouvementPion(Pion pion, Case tgt, Plateau plat) {
-        // Logique de prise en passant
-        if (Math.abs(tgt.getX() - pion.getX()) == 1 && tgt.getPiece() == null) {
-            return checkEnPassant(pion, tgt, plat);
+        if (p instanceof Pion && isPriseEnPassantCase((Pion) p, tgt, plat)) {
+            return validerPriseEnPassant((Pion)p, tgt, plat);
         }
-        return true;
+
+        // Validation standard
+        return p.getCasesAccessibles().contains(tgt)
+                && !simulerEchec(p, tgt, plat);
     }
 
-    private static boolean checkEnPassant(Pion pion, Case tgt, Plateau plat) {
-        int direction = pion.getColor() == PieceColor.WHITE ? 1 : -1;
-        Case caseAdjacente = plat.getCase(tgt.getX(), pion.getY());
-        Piece pieceAdjacente = caseAdjacente.getPiece();
+    static boolean validerRoque(Roi roi, Case tgt, Plateau plat) {
+        // 1. Vérifier que le roi n'a pas bougé
+        if (roi.hasMoved()) return false;
 
-        return pieceAdjacente instanceof Pion &&
-                ((Pion)pieceAdjacente).isPriseEnPassantPossible();
-    }
-
-    private static boolean validerRoque(Roi roi, Case tgt, Plateau plat) {
-        // Implémentation simplifiée
+        // 2. Déterminer la direction
         int direction = tgt.getX() > roi.getX() ? 1 : -1;
-        Case tourCase = plat.getCase(direction == 1 ? 7 : 0, roi.getY());
+        int rookX = direction == 1 ? 7 : 0;
 
-        return tourCase.getPiece() instanceof Tour &&
-                !((Tour)tourCase.getPiece()).hasMoved() &&
-                !roi.hasMoved();
+        // 3. Vérifier la tour
+        Case rookCase = plat.getCase(rookX, roi.getY());
+        if (!(rookCase.getPiece() instanceof Tour) || ((Tour)rookCase.getPiece()).hasMoved()) {
+            return false;
+        }
+
+        // 4. Vérifier les cases intermédiaires
+        int start = Math.min(roi.getX(), rookX) + 1;
+        int end = Math.max(roi.getX(), rookX);
+        for (int x = start; x < end; x++) {
+            if (plat.getCase(x, roi.getY()).getPiece() != null) return false;
+        }
+
+        // 5. Vérifier l'absence d'échec
+        return !plat.estEnEchec(roi.getColor());
+    }
+
+    static boolean validerPriseEnPassant(Pion pion, Case tgt, Plateau plat) {
+        // 1. Vérifier le mouvement diagonal
+        int deltaX = Math.abs(tgt.getX() - pion.getX());
+        int deltaY = tgt.getY() - pion.getY();
+        int direction = (pion.getColor() == PieceColor.WHITE) ? 1 : -1;
+
+        if (deltaX != 1 || deltaY != direction) return false;
+
+        // 2. Vérifier le pion adverse
+        Case caseAdjacente = plat.getCase(tgt.getX(), pion.getY());
+        Piece pionAdverse = caseAdjacente.getPiece();
+
+        return pionAdverse instanceof Pion
+                && ((Pion)pionAdverse).isPriseEnPassantPossible();
+    }
+
+    private static boolean isPriseEnPassantCase(Pion pion, Case tgt, Plateau plat) {
+        return tgt.getPiece() == null
+                && Math.abs(tgt.getX() - pion.getX()) == 1
+                && tgt.getY() == pion.getY() + (pion.getColor() == PieceColor.WHITE ? 1 : -1);
+    }
+
+    private static boolean simulerEchec(Piece p, Case tgt, Plateau plat) {
+        // Simulation du mouvement pour vérifier l'échec
+        Piece pieceCapturee = tgt.getPiece();
+        p.setPosition(tgt.getX(), tgt.getY());
+        tgt.setPiece(p);
+
+        boolean enEchec = plat.estEnEchec(p.getColor());
+
+        // Annulation de la simulation
+        p.setPosition(tgt.getX(), tgt.getY());
+        tgt.setPiece(pieceCapturee);
+
+        return enEchec;
     }
 }
