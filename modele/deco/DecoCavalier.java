@@ -1,6 +1,7 @@
 package modele.deco;
 
 import modele.pieces.Cavalier;
+import modele.pieces.PieceColor;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
 import java.util.ArrayList;
@@ -18,18 +19,26 @@ public class DecoCavalier extends Deco {
     @Override
     public List<Case> getCasesAccessibles() {
         List<Case> cases = new ArrayList<>();
-        int[][] moves = {{2,1}, {1,2}, {-1,2}, {-2,1}, {-2,-1}, {-1,-2}, {1,-2}, {2,-1}};
+        int[][] moves = {
+                {2, 1}, {1, 2},
+                {-1, 2}, {-2, 1},
+                {-2, -1}, {-1, -2},
+                {1, -2}, {2, -1}
+        };
 
-        for (int[] m : moves) {
-            Case c = plateau.getCaseRelative(
-                    plateau.getCase(cavalier.getX(), cavalier.getY()),
-                    m[0],
-                    m[1]
-            );
-            if (c != null && (c.getPiece() == null || c.getPiece().getColor() != cavalier.getColor())) {
-                cases.add(c);
+        // Ajout des cases valides
+        for (int[] move : moves) {
+            int newX = cavalier.getX() + move[0];
+            int newY = cavalier.getY() + move[1];
+
+            if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
+                Case c = plateau.getCase(newX, newY);
+                if (c != null && (c.getPiece() == null || c.getPiece().getColor() != cavalier.getColor())) {
+                    cases.add(c);
+                }
             }
         }
+
         return cases;
     }
 }

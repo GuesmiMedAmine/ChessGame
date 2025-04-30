@@ -108,21 +108,20 @@ public class Jeu {
     }
 
     private void executerRoque(Roi roi, Case arrivee) {
-        // Déplacement du roi
-        arrivee.setPiece(roi);
-        roi.getPlateau().getCase(roi.getX(), roi.getY()).setPiece(null);
-        roi.setPosition(arrivee.getX(), arrivee.getY());
-
-        // Déplacement de la tour
-        int direction = arrivee.getX() > 4 ? 1 : -1;
+        int direction = arrivee.getX() == 6 ? 1 : -1; // 6 = roque droit, 2 = roque gauche
         int rookStartX = direction == 1 ? 7 : 0;
         int rookEndX = direction == 1 ? 5 : 3;
 
-        Case rookStart = roi.getPlateau().getCase(rookStartX, roi.getY());
-        Case rookEnd = roi.getPlateau().getCase(rookEndX, roi.getY());
-
+        Case rookStart = plateau.getCase(rookStartX, roi.getY());
         Tour tour = (Tour) rookStart.getPiece();
-        rookEnd.setPiece(tour);
+
+        // Déplacer le roi
+        arrivee.setPiece(roi);
+        plateau.getCase(roi.getX(), roi.getY()).setPiece(null);
+        roi.setPosition(arrivee.getX(), arrivee.getY());
+
+        // Déplacer la tour
+        plateau.getCase(rookEndX, roi.getY()).setPiece(tour);
         rookStart.setPiece(null);
         tour.setPosition(rookEndX, roi.getY());
     }
