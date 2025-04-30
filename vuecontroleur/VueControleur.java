@@ -33,8 +33,6 @@ public class VueControleur extends JPanel {
                 lbl.setHorizontalAlignment(SwingConstants.CENTER);
                 lbl.setVerticalAlignment(SwingConstants.CENTER);
 
-                // Désactiver les effets de souris indésirables
-
 
                 // Gestion des clics
                 final int x = i;
