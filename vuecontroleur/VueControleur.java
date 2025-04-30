@@ -12,13 +12,13 @@ import java.util.List;
 
 public class VueControleur extends JPanel {
     private final Jeu jeu;
-    private final JButton[][] grid;
+    private final JLabel[][] grid;
     private Case selectedCase;
     private List<Case> validMoves = new ArrayList<>();
 
     public VueControleur() {
         jeu = new Jeu();
-        grid = new JButton[8][8];
+        grid = new JLabel[8][8];
         setLayout(new GridLayout(8, 8));
         initialiserUI();
         rafraichirUI();
@@ -27,23 +27,27 @@ public class VueControleur extends JPanel {
     private void initialiserUI() {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                JButton btn = new JButton();
-                btn.setPreferredSize(new Dimension(80, 80)); // Taille fixe
-                btn.setHorizontalAlignment(SwingConstants.CENTER);
-                btn.setVerticalAlignment(SwingConstants.CENTER);
+                JLabel lbl = new JLabel();
+                lbl.setOpaque(true);
+                lbl.setPreferredSize(new Dimension(80, 80));
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                lbl.setVerticalAlignment(SwingConstants.CENTER);
+
+                // Désactiver les effets de souris indésirables
+
 
                 // Gestion des clics
                 final int x = i;
                 final int y = j;
-                btn.addMouseListener(new MouseAdapter() {
+                lbl.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
                         gererClicCase(x, y);
                     }
                 });
 
-                grid[i][j] = btn;
-                add(btn);
+                grid[i][j] = lbl;
+                add(lbl);
             }
         }
     }
@@ -65,6 +69,7 @@ public class VueControleur extends JPanel {
             }
             selectedCase = null;
             validMoves.clear();
+            getParent().repaint();
         }
         rafraichirUI();
     }
@@ -72,29 +77,30 @@ public class VueControleur extends JPanel {
     private void rafraichirUI() {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                JButton btn = grid[i][j];
+                JLabel lbl = grid[i][j];
                 Case c = jeu.getPlateau().getCase(i, j);
 
-                // Réinitialisation de l'apparence
-                btn.setBackground((i + j) % 2 == 0 ? new Color(238, 238, 210) : new Color(118, 150, 86));
-                btn.setIcon(null);
+                // Réinitialisation complète
+                lbl.setBackground((i + j) % 2 == 0 ? new Color(238, 238, 210) : new Color(118, 150, 86));
+                lbl.setIcon(null);
+                lbl.setBorder(null);
 
-                // Mise à jour de l'icône
-                if (c.getPiece() != null) {
+                // Afficher l'icône seulement si nécessaire
+                if (c.getPiece() != null && !validMoves.contains(c)) {
                     ImageIcon icon = new ImageIcon(getClass().getResource(c.getPiece().getImagePath()));
                     Image img = icon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
-                    btn.setIcon(new ImageIcon(img));
+                    lbl.setIcon(new ImageIcon(img));
                 }
 
-                // Surbrillance
+                // Surbrillance sans icône
                 if (selectedCase != null && selectedCase.equals(c)) {
-                    btn.setBackground(new Color(255, 255, 0, 150)); // Jaune transparent
+                    lbl.setBackground(new Color(255, 255, 0, 150)); // Jaune
                 }
                 else if (validMoves.contains(c)) {
-                    btn.setBackground(new Color(0, 255, 0, 150)); // Vert transparent
+                    lbl.setBackground(new Color(144, 238, 144, 150)); // Vert
+                    lbl.setIcon(null); // Forcer la suppression
                 }
             }
         }
-        repaint();
-    }
-}
+        repaint(); // Rafraîchissement global
+    }}
