@@ -69,7 +69,6 @@ public class Controlleur implements Observer {
      */
     @Override
     public void update(Observable o, Object arg) {
-        // TODO : rafraîchir la vue, journaliser, etc.
         System.out.println("Plateau mis à jour -> " + arg);
     }
 }
