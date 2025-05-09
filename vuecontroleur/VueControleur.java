@@ -1,7 +1,8 @@
 package vuecontroleur;
 
-import modele.jeu.Jeu;
+import modele.plateau.Controlleur;
 import modele.plateau.Case;
+import modele.jeu.Jeu;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -10,13 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VueControleur extends JPanel {
-    private final Jeu jeu;
+    // On récupère l'instance de Jeu via le contrôleur
+    private final Jeu jeu = Controlleur.getInstance().getJeu();
     private final JLabel[][] grid;
     private Case selectedCase;
     private List<Case> validMoves = new ArrayList<>();
 
     public VueControleur() {
-        jeu = new Jeu();
         grid = new JLabel[8][8];
         setLayout(new GridLayout(8, 8));
         initialiserUI();
@@ -32,10 +33,7 @@ public class VueControleur extends JPanel {
                 lbl.setHorizontalAlignment(SwingConstants.CENTER);
                 lbl.setVerticalAlignment(SwingConstants.CENTER);
 
-
-                // Gestion des clics
-                final int x = i;
-                final int y = j;
+                final int x = i, y = j;
                 lbl.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
@@ -53,14 +51,12 @@ public class VueControleur extends JPanel {
         Case clickedCase = jeu.getPlateau().getCase(x, y);
 
         if (selectedCase == null) {
-            // Sélection d'une pièce
             if (clickedCase.getPiece() != null &&
                     clickedCase.getPiece().getColor() == jeu.getJoueurActuel()) {
                 selectedCase = clickedCase;
                 validMoves = selectedCase.getPiece().getCasesAccessibles();
             }
         } else {
-            // Déplacement
             if (validMoves.contains(clickedCase)) {
                 jeu.jouerCoup(selectedCase, clickedCase);
             }
@@ -77,27 +73,29 @@ public class VueControleur extends JPanel {
                 JLabel lbl = grid[i][j];
                 Case c = jeu.getPlateau().getCase(i, j);
 
-                // Réinitialisation complète
-                lbl.setBackground((i + j) % 2 == 0 ? new Color(238, 238, 210) : new Color(118, 150, 86));
+                lbl.setBackground((i + j) % 2 == 0
+                        ? new Color(238, 238, 210)
+                        : new Color(118, 150, 86));
                 lbl.setIcon(null);
                 lbl.setBorder(null);
 
-                // Afficher l'icône seulement si nécessaire
                 if (c.getPiece() != null && !validMoves.contains(c)) {
-                    ImageIcon icon = new ImageIcon(getClass().getResource(c.getPiece().getImagePath()));
-                    Image img = icon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+                    ImageIcon icon = new ImageIcon(
+                            getClass().getResource(c.getPiece().getImagePath())
+                    );
+                    Image img = icon.getImage()
+                            .getScaledInstance(70, 70, Image.SCALE_SMOOTH);
                     lbl.setIcon(new ImageIcon(img));
                 }
 
-                // Surbrillance sans icône
                 if (selectedCase != null && selectedCase.equals(c)) {
-                    lbl.setBackground(new Color(255, 255, 0, 150)); // Jaune
-                }
-                else if (validMoves.contains(c)) {
-                    lbl.setBackground(new Color(144, 238, 144, 150)); // Vert
-                    lbl.setIcon(null); // Forcer la suppression
+                    lbl.setBackground(new Color(255, 255, 0, 150));
+                } else if (validMoves.contains(c)) {
+                    lbl.setBackground(new Color(144, 238, 144, 150));
+                    lbl.setIcon(null);
                 }
             }
         }
-        repaint(); // Rafraîchissement global
-    }}
+        repaint();
+    }
+}
