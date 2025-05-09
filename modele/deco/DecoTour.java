@@ -3,9 +3,6 @@ package modele.deco;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
 import modele.pieces.Tour;
-import modele.pieces.Piece;
-import modele.pieces.PieceColor;
-import modele.pieces.PieceType;
 import java.util.ArrayList;
 import java.util.List;
 public class DecoTour extends Deco {

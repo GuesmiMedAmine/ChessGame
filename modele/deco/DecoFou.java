@@ -3,9 +3,6 @@ package modele.deco;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
 import modele.pieces.Fou;
-import modele.pieces.Piece;
-import modele.pieces.PieceColor;
-import modele.pieces.PieceType;
 import java.util.ArrayList;
 import java.util.List;
 

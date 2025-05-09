@@ -64,10 +64,8 @@ public class Jeu {
         if (depart.getPiece() == null) return false;
         Piece piece = depart.getPiece();
 
-        // Validation globale avec MoveValidator
         if (!MoveValidator.isValid(piece, arrivee, plateau)) return false;
 
-        // Vérifier les cas spéciaux
         boolean isRoque = false;
         boolean isEnPassant = false;
 
@@ -78,11 +76,12 @@ public class Jeu {
             isEnPassant = MoveValidator.validerPriseEnPassant((Pion) piece, arrivee, plateau);
         }
 
-        // Création du coup avec les flags
         Coup coup = new Coup(piece, arrivee, isRoque, isEnPassant);
         historique.add(coup);
 
-        // Exécution du mouvement spécial
+        // Ajout: Afficher le mouvement
+        System.out.println("Joueur " + joueurActuel + " joue: " + coup);
+
         if (isRoque) {
             executerRoque((Roi) piece, arrivee);
         }
@@ -90,20 +89,30 @@ public class Jeu {
             executerPriseEnPassant((Pion) piece, arrivee);
         }
         else {
-            // Déplacement standard
             arrivee.setPiece(piece);
             depart.setPiece(null);
             piece.setPosition(arrivee.getX(), arrivee.getY());
         }
 
-        // Gestion des états spéciaux
         if (piece instanceof Pion && Math.abs(arrivee.getY() - depart.getY()) == 2) {
             ((Pion) piece).setPriseEnPassantPossible(true);
         }
 
-        // Log et changement de joueur
-        System.out.println(coup);
+        PieceColor adversaire = joueurActuel;
         joueurActuel = (joueurActuel == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
+
+        // Ajout: Vérification et affichage de l'échec simple
+        if (plateau.estEnEchec(adversaire)) {
+            System.out.println("Échec au joueur " + adversaire + " !");
+        }
+
+        if (estEchecEtMat(adversaire)) {
+            System.out.println("Échec et mat ! Joueur " + adversaire + " perd.");
+        }
+        else if (estPat(adversaire)) {
+            System.out.println("Pat ! Match nul.");
+        }
+
         return true;
     }
 
@@ -140,4 +149,47 @@ public class Jeu {
         public PieceColor getJoueurActuel() {
             return joueurActuel;
     }
+    public boolean estEchecEtMat(PieceColor couleur) {
+        // 1. Vérifier si le joueur est en échec
+        if (!plateau.estEnEchec(couleur)) return false;
+
+        // 2. Vérifier s'il existe au moins un coup légal
+        return !aDesMouvementsValides(couleur);
     }
+
+    public boolean estPat(PieceColor couleur) {
+        // 1. Vérifier si le joueur n'est PAS en échec
+        if (plateau.estEnEchec(couleur)) return false;
+
+        // 2. Vérifier s'il n'a aucun coup légal
+        return !aDesMouvementsValides(couleur);
+    }
+
+    private boolean aDesMouvementsValides(PieceColor couleur) {
+        for (int x = 0; x < Plateau.SIZE; x++) {
+            for (int y = 0; y < Plateau.SIZE; y++) {
+                Case c = plateau.getCase(x, y);
+                Piece p = c.getPiece();
+
+                if (p != null && p.getColor() == couleur) {
+                    for (Case destination : p.getCasesAccessibles()) {
+                        // Simulation du mouvement
+                        Piece backup = destination.getPiece();
+                        destination.setPiece(p);
+                        c.setPiece(null);
+
+                        boolean estValide = !plateau.estEnEchec(couleur);
+
+                        // Annulation simulation
+                        c.setPiece(p);
+                        destination.setPiece(backup);
+
+                        if (estValide) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+}
+

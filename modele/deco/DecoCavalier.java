@@ -1,7 +1,6 @@
 package modele.deco;
 
 import modele.pieces.Cavalier;
-import modele.pieces.PieceColor;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
 import java.util.ArrayList;
