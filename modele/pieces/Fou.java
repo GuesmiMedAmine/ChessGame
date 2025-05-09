@@ -9,19 +9,17 @@ public class Fou extends Piece {
     }
 
     @Override
-    protected void initDecorateur(Plateau plateau) {
-        this.decorateur = new DecoFou(this, plateau);
+    protected void initDecorateur() {
+        this.decorateur = new DecoFou(this);
     }
 
     @Override
     protected void setImagePath() {
         this.imagePath = "/images/" + (color == PieceColor.WHITE ? "w" : "b") + "B.png";
     }
-    @Override
-    protected void initDecorateur() {
-        this.decorateur = new DecoFou(this, plateau);
-    }
 
     @Override
-    public PieceType getType() { return PieceType.FOU; }
+    public PieceType getType() {
+        return PieceType.FOU;
+    }
 }

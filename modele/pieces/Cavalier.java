@@ -9,19 +9,17 @@ public class Cavalier extends Piece {
     }
 
     @Override
-    protected void initDecorateur(Plateau plateau) {
-        this.decorateur = new DecoCavalier(this, plateau);
+    protected void initDecorateur() {
+        this.decorateur = new DecoCavalier(this);
     }
 
     @Override
     protected void setImagePath() {
         this.imagePath = "/images/" + (color == PieceColor.WHITE ? "w" : "b") + "N.png";
     }
-    @Override
-    protected void initDecorateur() {
-        this.decorateur = new DecoCavalier(this, plateau);
-    }
 
     @Override
-    public PieceType getType() { return PieceType.CAVALIER; }
+    public PieceType getType() {
+        return PieceType.CAVALIER;
+    }
 }

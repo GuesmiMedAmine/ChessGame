@@ -9,20 +9,17 @@ public class Dame extends Piece {
     }
 
     @Override
-    protected void initDecorateur(Plateau plateau) {
-        this.decorateur = new DecoDame(this, plateau);
+    protected void initDecorateur() {
+        this.decorateur = new DecoDame(this);
     }
 
     @Override
     protected void setImagePath() {
         this.imagePath = "/images/" + (color == PieceColor.WHITE ? "w" : "b") + "Q.png";
     }
+
     @Override
-    protected void initDecorateur() {
-        this.decorateur = new DecoDame(this, plateau);
+    public PieceType getType() {
+        return PieceType.DAME;
     }
-
-
-    @Override
-    public PieceType getType() { return PieceType.DAME; }
 }

@@ -31,7 +31,6 @@ public abstract class Piece {
 
     protected abstract void initDecorateur(); // À implémenter dans les sous-classes
 
-    protected abstract void initDecorateur(Plateau plateau);
 
     protected abstract void setImagePath();
 

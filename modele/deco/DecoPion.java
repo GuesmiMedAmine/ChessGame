@@ -1,64 +1,56 @@
 package modele.deco;
 
-import modele.plateau.Case;
-import modele.plateau.Plateau;
 import modele.pieces.Pion;
-
 import modele.pieces.PieceColor;
+import modele.plateau.Case;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DecoPion extends Deco {
-    private final Pion pion;
-    private final Plateau plateau;
-
-    public DecoPion(Pion pion, Plateau plateau) {
-        this.pion = pion;
-        this.plateau = plateau;
+    public DecoPion(Pion wrapped) {
+        super(wrapped);
     }
 
     @Override
     public List<Case> getCasesAccessibles() {
-        List<Case> cases = new ArrayList<>();
-        Case origine = plateau.getCase(pion.getX(), pion.getY());
-        int dir = (pion.getColor() == PieceColor.WHITE) ? 1 : -1;
+        List<Case> result = new ArrayList<>();
+        int x = getX(), y = getY();
+        int dir = (getColor() == PieceColor.WHITE) ? +1 : -1;
 
-        // Déplacement avant
-        Case devant = plateau.getCaseRelative(origine, 0, dir);
-        if (devant != null && devant.getPiece() == null) {
-            cases.add(devant);
-            // Double pas initial
-            if ((pion.getColor() == PieceColor.WHITE && origine.getY() == 1)
-                    || (pion.getColor() == PieceColor.BLACK && origine.getY() == 6)) {
-                Case devant2 = plateau.getCaseRelative(origine, 0, 2 * dir);
-                if (devant2 != null && devant2.getPiece() == null) {
-                    cases.add(devant2);
-                }
+        // avancer
+        Case one = getPlateau().getCase(x, y + dir);
+        if (one != null && one.getPiece() == null) {
+            result.add(one);
+            boolean home = (getColor() == PieceColor.WHITE && y == 1)
+                    || (getColor() == PieceColor.BLACK && y == 6);
+            if (home) {
+                Case two = getPlateau().getCase(x, y + 2 * dir);
+                if (two != null && two.getPiece() == null) result.add(two);
             }
         }
 
-        // Prise normale
-        for (int dx : new int[]{-1, 1}) {
-            Case diag = plateau.getCaseRelative(origine, dx, dir);
-            if (diag != null && diag.getPiece() != null
-                    && diag.getPiece().getColor() != pion.getColor()) {
-                cases.add(diag);
+        // captures
+        for (int dx : new int[]{ -1, 1 }) {
+            Case diag = getPlateau().getCase(x + dx, y + dir);
+            if (diag != null
+                    && diag.getPiece() != null
+                    && diag.getPiece().getColor() != getColor()) {
+                result.add(diag);
             }
         }
 
-        // Prise en passant
-        for (int dx : new int[]{-1, 1}) {
-            Case adj = plateau.getCaseRelative(origine, dx, 0);
-            if (adj != null && adj.getPiece() instanceof Pion) {
-                Pion pionAdj = (Pion) adj.getPiece();
-                if (pionAdj.isPriseEnPassantPossible()) {
-                    Case priseEP = plateau.getCaseRelative(origine, dx, dir);
-                    cases.add(priseEP);
-                }
+        // en passant
+        for (int dx : new int[]{ -1, 1 }) {
+            Case adj = getPlateau().getCase(x + dx, y);
+            if (adj != null
+                    && adj.getPiece() instanceof Pion
+                    && ((Pion) adj.getPiece()).isPriseEnPassantPossible()) {
+                Case ep = getPlateau().getCase(x + dx, y + dir);
+                if (ep != null) result.add(ep);
             }
         }
 
-        return cases;
+        return result;
     }
 }

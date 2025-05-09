@@ -25,7 +25,8 @@ public class Plateau extends Observable {
         UP_LEFT(-1, -1), UP_RIGHT(-1, 1),
         DOWN_LEFT(1, -1), DOWN_RIGHT(1, 1);
 
-        private final int dx, dy;
+        public final int dx;
+        public final int dy;
         Direction(int dx, int dy) { this.dx = dx; this.dy = dy; }
         public int dx() { return dx; }
         public int dy() { return dy; }

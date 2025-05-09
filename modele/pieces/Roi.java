@@ -5,12 +5,14 @@ import modele.plateau.Plateau;
 
 public class Roi extends Piece {
     private boolean hasMoved = false;
+
     public Roi(int x, int y, PieceColor color, Plateau plateau) {
-        super(x, y, color, plateau, PieceType.ROI); // Passage du type au constructeur parent
+        super(x, y, color, plateau, PieceType.ROI);
     }
+
     @Override
-    protected void initDecorateur(Plateau plateau) {
-        this.decorateur = new DecoRoi(this, plateau);
+    protected void initDecorateur() {
+        this.decorateur = new DecoRoi(this);
     }
 
     @Override
@@ -19,19 +21,17 @@ public class Roi extends Piece {
     }
 
     @Override
-    public PieceType getType() { return PieceType.ROI; }
-
-    @Override
     public void setPosition(int x, int y) {
         super.setPosition(x, y);
         this.hasMoved = true;
     }
-    @Override
-    protected void initDecorateur() {
-        this.decorateur = new DecoRoi(this, plateau); // <-- Initialisation du décorateur
-    }
 
     public boolean hasMoved() {
         return hasMoved;
+    }
+
+    @Override
+    public PieceType getType() {
+        return PieceType.ROI;
     }
 }

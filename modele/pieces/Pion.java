@@ -10,9 +10,9 @@ public class Pion extends Piece {
         super(x, y, color, plateau, PieceType.PION);
     }
 
-
-    protected void initDecorateur(Plateau plateau) {
-        this.decorateur = new DecoPion(this, plateau);
+    @Override
+    protected void initDecorateur() {
+        this.decorateur = new DecoPion(this);
     }
 
     @Override
@@ -29,10 +29,7 @@ public class Pion extends Piece {
     }
 
     @Override
-    protected void initDecorateur() {
-        this.decorateur = new DecoPion(this, plateau); // <-- Initialisation du décorateur
+    public PieceType getType() {
+        return PieceType.PION;
     }
-
-    @Override
-    public PieceType getType() { return PieceType.PION; }
 }
