@@ -1,5 +1,5 @@
 // vuecontroleur/Main.java
-package Vue;
+package vue;
 
 import javax.swing.*;
 import controlleur.Controlleur;

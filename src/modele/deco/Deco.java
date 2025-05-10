@@ -5,7 +5,7 @@ import modele.plateau.Plateau;
 import modele.pieces.Piece;
 import modele.pieces.PieceColor;
 import modele.pieces.PieceType;
-import modele.plateau.Plateau.Direction;
+import modele.plateau.Direction;
 
 import java.util.ArrayList;
 import java.util.List;

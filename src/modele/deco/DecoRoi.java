@@ -3,7 +3,7 @@ package modele.deco;
 import modele.pieces.Roi;
 import modele.pieces.Tour;
 import modele.plateau.Case;
-import modele.plateau.Plateau.Direction;
+import modele.plateau.Direction;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -1,4 +1,4 @@
-package Vue;
+package vue;
 
 import controlleur.Controlleur;
 import modele.plateau.Case;
