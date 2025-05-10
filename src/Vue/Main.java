@@ -1,8 +1,8 @@
 // vuecontroleur/Main.java
-package vuecontroleur;
+package Vue;
 
 import javax.swing.*;
-import modele.plateau.Controlleur;
+import controlleur.Controlleur;
 
 public class Main {
     public static void main(String[] args) {

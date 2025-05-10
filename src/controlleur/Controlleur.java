@@ -1,4 +1,4 @@
-package modele.plateau;
+package controlleur;
 
 import modele.jeu.Jeu;
 

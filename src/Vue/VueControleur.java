@@ -1,6 +1,6 @@
-package vuecontroleur;
+package Vue;
 
-import modele.plateau.Controlleur;
+import controlleur.Controlleur;
 import modele.plateau.Case;
 import modele.jeu.Jeu;
 import javax.swing.*;
