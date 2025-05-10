@@ -16,11 +16,6 @@ public class Tour extends Piece {
     }
 
     @Override
-    protected void setImagePath() {
-        this.imagePath = "/images/" + (color == PieceColor.WHITE ? "w" : "b") + "R.png";
-    }
-
-    @Override
     public void setPosition(int x, int y) {
         super.setPosition(x, y);
         this.hasMoved = true;
@@ -30,8 +25,4 @@ public class Tour extends Piece {
         return hasMoved;
     }
 
-    @Override
-    public PieceType getType() {
-        return PieceType.TOUR;
-    }
 }

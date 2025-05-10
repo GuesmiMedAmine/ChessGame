@@ -13,13 +13,5 @@ public class Fou extends Piece {
         this.decorateur = new DecoFou(this);
     }
 
-    @Override
-    protected void setImagePath() {
-        this.imagePath = "/images/" + (color == PieceColor.WHITE ? "w" : "b") + "B.png";
-    }
 
-    @Override
-    public PieceType getType() {
-        return PieceType.FOU;
-    }
 }

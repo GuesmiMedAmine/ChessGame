@@ -14,10 +14,6 @@ public abstract class Piece {
     protected String imagePath;
     protected Plateau plateau;
 
-    public Plateau getPlateau() {
-        return plateau;
-    }
-
     public Piece(int x, int y, PieceColor color, Plateau plateau, PieceType type) {
         this.x = x;
         this.y = y;
@@ -25,29 +21,35 @@ public abstract class Piece {
         this.plateau = plateau;
         this.type = type;
         this.initDecorateur();
-        setImagePath();
+        this.setImagePath();
     }
 
+    protected abstract void initDecorateur();
 
-    protected abstract void initDecorateur(); // À implémenter dans les sous-classes
-
-
-    protected abstract void setImagePath();
+    /**
+     * Initialise le chemin vers l'image correspondant au type et à la couleur de la pièce.
+     */
+    protected void setImagePath() {
+        this.imagePath = "/images/" +
+                (color == PieceColor.WHITE ? "w" : "b") +
+                type.getLetter() +
+                ".png";
+    }
 
     public List<Case> getCasesAccessibles() {
         return decorateur.getCasesAccessibles();
     }
 
-    // Getters
+    // Accesseurs
     public int getX() { return x; }
     public int getY() { return y; }
     public PieceColor getColor() { return color; }
     public PieceType getType() { return type; }
     public String getImagePath() { return imagePath; }
+    public Plateau getPlateau() { return plateau; }
 
     public void setPosition(int x, int y) {
         this.x = x;
         this.y = y;
     }
-
 }

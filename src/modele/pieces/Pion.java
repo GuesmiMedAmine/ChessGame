@@ -15,10 +15,6 @@ public class Pion extends Piece {
         this.decorateur = new DecoPion(this);
     }
 
-    @Override
-    protected void setImagePath() {
-        this.imagePath = "/images/" + (color == PieceColor.WHITE ? "w" : "b") + "P.png";
-    }
 
     public boolean isPriseEnPassantPossible() {
         return priseEnPassantPossible;
@@ -28,8 +24,4 @@ public class Pion extends Piece {
         this.priseEnPassantPossible = value;
     }
 
-    @Override
-    public PieceType getType() {
-        return PieceType.PION;
-    }
 }

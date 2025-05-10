@@ -21,14 +21,11 @@ public abstract class Deco extends Piece {
     public Deco(Piece wrapped) {
         super(wrapped.getX(), wrapped.getY(), wrapped.getColor(), wrapped.getPlateau(), wrapped.getType());
         this.wrapped = wrapped;
-        this.decorateur = this;
-        this.imagePath = wrapped.getImagePath();
     }
 
     @Override public int getX()               { return wrapped.getX(); }
     @Override public int getY()               { return wrapped.getY(); }
     @Override public PieceColor getColor()    { return wrapped.getColor(); }
-    @Override public PieceType getType()      { return wrapped.getType(); }
     @Override public String getImagePath()    { return wrapped.getImagePath(); }
     @Override public void setPosition(int x,int y) { wrapped.setPosition(x,y); }
     @Override public Plateau getPlateau()     { return wrapped.getPlateau(); }

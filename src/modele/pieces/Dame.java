@@ -13,13 +13,4 @@ public class Dame extends Piece {
         this.decorateur = new DecoDame(this);
     }
 
-    @Override
-    protected void setImagePath() {
-        this.imagePath = "/images/" + (color == PieceColor.WHITE ? "w" : "b") + "Q.png";
-    }
-
-    @Override
-    public PieceType getType() {
-        return PieceType.DAME;
-    }
 }

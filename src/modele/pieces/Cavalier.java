@@ -13,13 +13,4 @@ public class Cavalier extends Piece {
         this.decorateur = new DecoCavalier(this);
     }
 
-    @Override
-    protected void setImagePath() {
-        this.imagePath = "/images/" + (color == PieceColor.WHITE ? "w" : "b") + "N.png";
-    }
-
-    @Override
-    public PieceType getType() {
-        return PieceType.CAVALIER;
-    }
 }
