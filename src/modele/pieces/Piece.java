@@ -1,18 +1,23 @@
 package modele.pieces;
 
 import modele.deco.Deco;
-import modele.plateau.Plateau;
 import modele.plateau.Case;
+import modele.plateau.Plateau;
 import java.util.List;
 
+/**
+ * Classe de base pour toutes les pièces :
+ * - stocke x, y, color, plateau, type
+ * - initialise le décorateur et l’icône
+ * - délègue le calcul des mouvements au décorateur
+ */
 public abstract class Piece {
-    protected int x;
-    protected int y;
+    protected int x, y;
     protected final PieceColor color;
     protected final PieceType type;
+    protected final Plateau plateau;
     protected Deco decorateur;
     protected String imagePath;
-    protected Plateau plateau;
 
     public Piece(int x, int y, PieceColor color, Plateau plateau, PieceType type) {
         this.x = x;
@@ -20,33 +25,33 @@ public abstract class Piece {
         this.color = color;
         this.plateau = plateau;
         this.type = type;
-        this.initDecorateur();
-        this.setImagePath();
+        initDecorateur();    // chaque sous-classe instancie son DecoToto(this)
+        setImagePath();
     }
 
+    /** Instancie le décorateur approprié dans chaque sous-classe */
     protected abstract void initDecorateur();
 
-    /**
-     * Initialise le chemin vers l'image correspondant au type et à la couleur de la pièce.
-     */
+    /** Chemin par défaut de l’image selon couleur/type */
     protected void setImagePath() {
-        this.imagePath = "/images/" +
-                (color == PieceColor.WHITE ? "w" : "b") +
-                type.getLetter() +
-                ".png";
+        this.imagePath = "/images/"
+                + (color == PieceColor.WHITE ? "w" : "b")
+                + type.getLetter()
+                + ".png";
     }
 
+    /** Délégation pure et simple au décorateur */
     public List<Case> getCasesAccessibles() {
         return decorateur.getCasesAccessibles();
     }
 
-    // Accesseurs
-    public int getX() { return x; }
-    public int getY() { return y; }
+    // --- Accesseurs / mutateurs basiques ---
+    public int getX()            { return x; }
+    public int getY()            { return y; }
     public PieceColor getColor() { return color; }
-    public PieceType getType() { return type; }
-    public String getImagePath() { return imagePath; }
-    public Plateau getPlateau() { return plateau; }
+    public PieceType getType()   { return type; }
+    public String getImagePath(){ return imagePath; }
+    public Plateau getPlateau()  { return plateau; }
 
     public void setPosition(int x, int y) {
         this.x = x;
