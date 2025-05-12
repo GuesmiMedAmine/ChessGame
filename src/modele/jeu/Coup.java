@@ -14,7 +14,7 @@ public class Coup {
 
     public Coup(Piece piece, Case arrivee, boolean roque, boolean priseEnPassant) {
         this.piece = piece;
-        this.depart = piece.getPlateau().getCase(piece.getX(), piece.getY());
+        this.depart = piece.getCurrentCase();
         this.arrivee = arrivee;
         this.pieceCapturee = arrivee.getPiece();
         this.roque = roque;

@@ -3,6 +3,10 @@ package modele.jeu;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
+import modele.deco.DecoRoi;
+import modele.deco.DecoPion;
+import modele.jeu.command.*;
 import modele.plateau.Plateau;
 import modele.plateau.Case;
 import modele.pieces.*;
@@ -11,16 +15,21 @@ import java.util.Observable;
 /**
  * Logique de la partie : historique, tour de jeu, validation, etc.
  * L'initialisation des pièces se fait désormais dans Plateau.
+ * Utilise le pattern Command pour l'exécution des coups.
  */
 public class Jeu {
     private final Plateau plateau;
     private final List<Coup> historique;
+    private final Stack<Command> commandesExecutees;
     private PieceColor joueurActuel;
+    private boolean partieTerminee;
 
     public Jeu() {
         this.plateau = new Plateau();
         this.historique = new ArrayList<>();
+        this.commandesExecutees = new Stack<>();
         this.joueurActuel = PieceColor.WHITE;
+        this.partieTerminee = false;
     }
 
     public Plateau getPlateau() {
@@ -41,12 +50,29 @@ public class Jeu {
     }
 
     /**
-     * Vérifie si la partie est terminée (échec et mat ou pat).
+     * Vérifie si la partie est terminée (échec et mat, pat, ou manuellement).
      * @return true si la partie est terminée
      */
     public boolean estPartieTerminee() {
-        return estEchecEtMat(PieceColor.WHITE) || estEchecEtMat(PieceColor.BLACK) 
+        return partieTerminee || estEchecEtMat(PieceColor.WHITE) || estEchecEtMat(PieceColor.BLACK) 
                || estPat(PieceColor.WHITE) || estPat(PieceColor.BLACK);
+    }
+
+    /**
+     * Termine manuellement la partie.
+     * @param vainqueur La couleur du vainqueur, ou null pour une partie nulle
+     */
+    public void terminerPartie(PieceColor vainqueur) {
+        this.partieTerminee = true;
+        // Notifier les observateurs
+        plateau.notifierObservers();
+
+        // Afficher le résultat dans la console
+        if (vainqueur != null) {
+            System.out.println("Partie terminée manuellement. " + vainqueur + " a gagné.");
+        } else {
+            System.out.println("Partie terminée manuellement. Match nul.");
+        }
     }
 
     /**
@@ -60,37 +86,67 @@ public class Jeu {
     }
 
     public boolean jouerCoup(Case depart, Case arrivee) {
+        // Si la partie est déjà terminée, ne rien faire
+        if (partieTerminee) return false;
+
         if (depart.getPiece() == null) return false;
         Piece piece = depart.getPiece();
 
         if (!MoveValidator.isValid(piece, arrivee, plateau)) return false;
 
-        boolean isRoque = false, isEnPassant = false;
+        // Créer et exécuter la commande appropriée
+        Command command = null;
+        boolean isRoque = false, isEnPassant = false, isPromotion = false;
+
+        // Vérifier si c'est un roque
         if (piece instanceof Roi && Math.abs(arrivee.getX() - depart.getX()) == 2) {
-            isRoque = MoveValidator.validerRoque((Roi) piece, arrivee, plateau);
-        } else if (piece instanceof Pion) {
-            isEnPassant = MoveValidator.validerPriseEnPassant((Pion) piece, arrivee, plateau);
+            DecoRoi decoRoi = (DecoRoi) ((Roi) piece).getDecorateur();
+            isRoque = decoRoi.validerRoque((Roi) piece, arrivee);
+            if (isRoque) {
+                boolean petitRoque = arrivee.getX() > depart.getX();
+                command = new RoqueCommand((Roi) piece, petitRoque);
+            }
+        } 
+        // Vérifier si c'est une prise en passant
+        else if (piece instanceof Pion && piece.getDecorateur() instanceof DecoPion) {
+            DecoPion decoPion = (DecoPion) piece.getDecorateur();
+            isEnPassant = decoPion.isPriseEnPassantCase((Pion) piece, arrivee) && 
+                          decoPion.validerPriseEnPassant((Pion) piece, arrivee);
+            if (isEnPassant) {
+                command = new PriseEnPassantCommand((Pion) piece, arrivee);
+            }
         }
 
+        // Vérifier si c'est une promotion (pion atteignant la dernière rangée)
+        if (piece instanceof Pion) {
+            int lastRank = (piece.getColor() == PieceColor.WHITE) ? 7 : 0;
+            if (arrivee.getY() == lastRank) {
+                isPromotion = true;
+                // Par défaut, promouvoir en dame
+                command = new PromotionCommand((Pion) piece, arrivee, PieceType.DAME);
+            }
+        }
+
+        // Si ce n'est pas un coup spécial, c'est un déplacement normal
+        if (command == null) {
+            command = new DeplacerPieceCommand(piece, arrivee);
+        }
+
+        // Exécuter la commande
+        command.execute();
+        commandesExecutees.push(command);
+
+        // Enregistrer le coup dans l'historique
         Coup coup = new Coup(piece, arrivee, isRoque, isEnPassant);
         historique.add(coup);
 
         // Afficher le coup dans la console
-        String typeMove = isRoque ? "roque" : (isEnPassant ? "prise en passant" : "déplacement");
+        String typeMove = isRoque ? "roque" : (isEnPassant ? "prise en passant" : (isPromotion ? "promotion" : "déplacement"));
         System.out.println(joueurActuel + " joue : " + piece.getType() + " de " + 
                            notationAlgebrique(depart) + " à " + notationAlgebrique(arrivee) + 
                            " (" + typeMove + ")");
 
-        if (isRoque) {
-            executerRoque((Roi) piece, arrivee);
-        } else if (isEnPassant) {
-            executerPriseEnPassant((Pion) piece, arrivee);
-        } else {
-            arrivee.setPiece(piece);
-            depart.setPiece(null);
-            piece.setPosition(arrivee.getX(), arrivee.getY());
-        }
-
+        // Marquer le pion comme pouvant être pris en passant au prochain tour
         if (piece instanceof Pion && Math.abs(arrivee.getY() - depart.getY()) == 2) {
             ((Pion) piece).setPriseEnPassantPossible(true);
         }
@@ -117,30 +173,31 @@ public class Jeu {
         return true;
     }
 
-    private void executerRoque(Roi roi, Case arrivee) {
-        int dir = (arrivee.getX() == 6) ? 1 : -1;
-        int rookStartX = (dir == 1) ? 7 : 0;
-        int rookEndX   = (dir == 1) ? 5 : 3;
-        Case rookCase = plateau.getCase(rookStartX, roi.getY());
-        Tour rook = (Tour) rookCase.getPiece();
+    /**
+     * Annule le dernier coup joué.
+     * @return true si un coup a été annulé, false sinon
+     */
+    public boolean annulerDernierCoup() {
+        if (commandesExecutees.isEmpty()) {
+            return false;
+        }
 
-        arrivee.setPiece(roi);
-        plateau.getCase(roi.getX(), roi.getY()).setPiece(null);
-        roi.setPosition(arrivee.getX(), arrivee.getY());
+        // Récupérer et annuler la dernière commande
+        Command dernierCoup = commandesExecutees.pop();
+        dernierCoup.undo();
 
-        plateau.getCase(rookEndX, roi.getY()).setPiece(rook);
-        rookCase.setPiece(null);
-        rook.setPosition(rookEndX, roi.getY());
-    }
+        // Retirer le dernier coup de l'historique
+        if (!historique.isEmpty()) {
+            historique.remove(historique.size() - 1);
+        }
 
-    private void executerPriseEnPassant(Pion pion, Case arrivee) {
-        int dir = (pion.getColor() == PieceColor.WHITE) ? -1 : 1;
-        Case cap = plateau.getCase(arrivee.getX(), arrivee.getY() + dir);
-        cap.setPiece(null);
+        // Changer le joueur actuel
+        joueurActuel = (joueurActuel == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
 
-        arrivee.setPiece(pion);
-        plateau.getCase(pion.getX(), pion.getY()).setPiece(null);
-        pion.setPosition(arrivee.getX(), arrivee.getY());
+        // Notifier les observateurs
+        plateau.notifierObservers();
+
+        return true;
     }
 
     public boolean estEchecEtMat(PieceColor couleur) {

@@ -1,11 +1,20 @@
 package vue;
 
+import events.GameEndEvent;
+import events.GameEndListener;
+import events.NewGameEvent;
+import events.NewGameListener;
 import modele.jeu.Jeu;
+import modele.pieces.PieceColor;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
+import ui.ChessTimer;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 
@@ -20,13 +29,96 @@ public class VueControleur extends VueBase {
     private Case selectedCase;
     private List<Case> validMoves;
 
+    // Composants UI additionnels
+    private final ChessTimer chessTimer;
+    private final JButton endGameButton;
+    private final JMenuBar menuBar;
+
+    // Gestion des événements
+    private final List<GameEndListener> gameEndListeners;
+    private final List<NewGameListener> newGameListeners;
+
     public VueControleur(Jeu jeu) {
         this.jeu = jeu;
         Plateau plateau = jeu.getPlateau();
         plateau.addObserver(this);
-        setLayout(new GridLayout(8, 8));
-        initUI();
+
+        // Initialiser la liste des listeners
+        this.gameEndListeners = new ArrayList<>();
+        this.newGameListeners = new ArrayList<>();
+
+        // Créer le layout principal
+        setLayout(new BorderLayout());
+
+        // Créer le panneau d'échiquier
+        JPanel chessboardPanel = new JPanel(new GridLayout(8, 8));
+        initChessboard(chessboardPanel);
+        add(chessboardPanel, BorderLayout.CENTER);
+
+        // Créer le timer
+        this.chessTimer = new ChessTimer();
+
+        // Créer le bouton de fin de partie
+        this.endGameButton = new JButton("Fin de partie");
+        endGameButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                fireGameEndEvent();
+            }
+        });
+
+        // Créer le panneau de contrôle (timer + bouton)
+        JPanel controlPanel = new JPanel(new BorderLayout());
+        controlPanel.add(chessTimer, BorderLayout.CENTER);
+        controlPanel.add(endGameButton, BorderLayout.EAST);
+        add(controlPanel, BorderLayout.NORTH);
+
+        // Créer la barre de menu
+        this.menuBar = createMenuBar();
+
+        // Mettre à jour l'affichage
         update(plateau, null);
+    }
+
+    /**
+     * Initialise l'échiquier avec une grille de labels.
+     */
+    private void initChessboard(JPanel chessboardPanel) {
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                JLabel lbl = new JLabel();
+                lbl.setOpaque(true);
+                lbl.setPreferredSize(new Dimension(80, 80));
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                lbl.setVerticalAlignment(SwingConstants.CENTER);
+                lbl.putClientProperty("pos", new Point(x, y));
+                grid[x][y] = lbl;
+                chessboardPanel.add(lbl);
+            }
+        }
+    }
+
+    /**
+     * Crée la barre de menu.
+     */
+    private JMenuBar createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        // Menu Partie
+        JMenu gameMenu = new JMenu("Partie");
+
+        // Option Nouvelle partie Pro
+        JMenuItem newProGameItem = new JMenuItem("Nouvelle partie Pro");
+        newProGameItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                fireNewGameEvent(true);
+            }
+        });
+        gameMenu.add(newProGameItem);
+
+        menuBar.add(gameMenu);
+        return menuBar;
     }
 
     /**
@@ -69,9 +161,9 @@ public class VueControleur extends VueBase {
 
                 // Surbrillance sélection et coups valides
                 if (selectedCase != null && selectedCase.equals(c)) {
-                    lbl.setBackground(new Color(255, 255, 0, 150));
+                    lbl.setBackground(new Color(22, 116, 255, 255));
                 } else if (validMoves != null && validMoves.contains(c)) {
-                    lbl.setBackground(new Color(144, 238, 144, 150));
+                    lbl.setBackground(new Color(8, 63, 140, 255));
                 }
 
                 // Surbrillance rouge pour les rois en échec
@@ -104,5 +196,91 @@ public class VueControleur extends VueBase {
         this.selectedCase = null;
         if (validMoves != null) validMoves.clear();
         repaint();
+    }
+
+    /**
+     * Retourne la barre de menu.
+     */
+    public JMenuBar getMenuBar() {
+        return menuBar;
+    }
+
+    /**
+     * Retourne le timer.
+     */
+    public ChessTimer getChessTimer() {
+        return chessTimer;
+    }
+
+    /**
+     * Démarre le timer pour le joueur actuel.
+     */
+    public void startTimer() {
+        chessTimer.setActivePlayer(jeu.getJoueurActuel());
+        chessTimer.startTimer();
+    }
+
+    /**
+     * Arrête le timer.
+     */
+    public void stopTimer() {
+        chessTimer.stopTimer();
+    }
+
+    /**
+     * Change le joueur actif du timer.
+     */
+    public void switchTimerPlayer() {
+        chessTimer.switchPlayer();
+    }
+
+    /**
+     * Ajoute un listener pour les événements de fin de partie.
+     */
+    public void addGameEndListener(GameEndListener listener) {
+        gameEndListeners.add(listener);
+    }
+
+    /**
+     * Retire un listener pour les événements de fin de partie.
+     */
+    public void removeGameEndListener(GameEndListener listener) {
+        gameEndListeners.remove(listener);
+    }
+
+    /**
+     * Ajoute un listener pour les événements de nouvelle partie.
+     */
+    public void addNewGameListener(NewGameListener listener) {
+        newGameListeners.add(listener);
+    }
+
+    /**
+     * Retire un listener pour les événements de nouvelle partie.
+     */
+    public void removeNewGameListener(NewGameListener listener) {
+        newGameListeners.remove(listener);
+    }
+
+    /**
+     * Déclenche un événement de fin de partie.
+     */
+    private void fireGameEndEvent() {
+        GameEndEvent event = new GameEndEvent(this);
+        for (GameEndListener listener : gameEndListeners) {
+            listener.gameEndRequested(event);
+        }
+    }
+
+    /**
+     * Déclenche un événement de nouvelle partie.
+     * 
+     * @param isProfessional true si la nouvelle partie doit être une partie professionnelle
+     */
+    private void fireNewGameEvent(boolean isProfessional) {
+        NewGameEvent event = new NewGameEvent(this, isProfessional);
+        for (NewGameListener listener : newGameListeners) {
+            listener.newGameRequested(event);
+        }
     }
 }

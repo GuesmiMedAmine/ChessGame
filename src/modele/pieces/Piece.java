@@ -52,12 +52,22 @@ public abstract class Piece {
     public PieceType getType()   { return type; }
     public String getImagePath(){ return imagePath; }
     public Plateau getPlateau()  { return plateau; }
+    public Deco getDecorateur()  { return decorateur; }
 
     /**
      * Retourne la case sur laquelle se trouve la pièce.
      * @return La case actuelle de la pièce
      */
     public Case getCurrentCase() {
+        return plateau.getCase(x, y);
+    }
+
+    /**
+     * Retourne la case sur laquelle se trouve la pièce, en utilisant le plateau fourni.
+     * @param plateau Le plateau sur lequel chercher la case
+     * @return La case actuelle de la pièce, ou null si la position est invalide
+     */
+    public Case getCurrentCase(Plateau plateau) {
         return plateau.getCase(x, y);
     }
 

@@ -63,13 +63,13 @@ public class Plateau extends Observable {
 
         // Placement sur les cases
         for (Piece p : pieces) {
-            Case c = getCase(p.getX(), p.getY());
+            Case c = p.getCurrentCase(this);
             c.setPiece(p);
         }
     }
     public void notifierObservers() {
         setChanged();           // accessible ici, car on est dans Plateau
-        notifyObservers();      // ou notifyObservers(arg) si vous voulez passer un paramètre
+        notifyObservers();
     }
 
     public Case getCase(int x, int y) {
@@ -119,7 +119,7 @@ public class Plateau extends Observable {
     public Case getRoi(PieceColor couleur) {
         for (Piece p : pieces) {
             if (p.getType() == PieceType.ROI && p.getColor() == couleur) {
-                return getCase(p.getX(), p.getY());
+                return p.getCurrentCase(this);
             }
         }
         return null;

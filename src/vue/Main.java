@@ -32,7 +32,11 @@ public class Main {
 
             frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             frame.add(ctrl.getVue());
-            frame.setSize(600, 600);
+
+            // Informer le contrôleur de la fenêtre principale
+            ctrl.setFrame(frame);
+
+            frame.setSize(700, 700);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
