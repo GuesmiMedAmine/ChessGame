@@ -21,6 +21,7 @@ public class Jeu {
     private final Plateau plateau;
     private final List<Coup> historique;
     private final Stack<Command> commandesExecutees;
+    private final Stack<Command> commandesAnnulees;
     private PieceColor joueurActuel;
     private boolean partieTerminee;
 
@@ -28,6 +29,7 @@ public class Jeu {
         this.plateau = new Plateau();
         this.historique = new ArrayList<>();
         this.commandesExecutees = new Stack<>();
+        this.commandesAnnulees = new Stack<>();
         this.joueurActuel = PieceColor.WHITE;
         this.partieTerminee = false;
     }
@@ -41,12 +43,12 @@ public class Jeu {
     }
 
     /**
-     * Vérifie si le joueur spécifié est en échec.
+     * Vérifie si le joueur spécifié est en échec en utilisant l'algorithme de backtracking.
      * @param couleur Couleur du joueur à vérifier
      * @return true si le joueur est en échec
      */
     public boolean estEnEchec(PieceColor couleur) {
-        return plateau.estEnEchec(couleur);
+        return MoveValidator.isInCheck(plateau, couleur);
     }
 
     /**
@@ -186,6 +188,9 @@ public class Jeu {
         Command dernierCoup = commandesExecutees.pop();
         dernierCoup.undo();
 
+        // Ajouter la commande annulée à la pile des commandes annulées
+        commandesAnnulees.push(dernierCoup);
+
         // Retirer le dernier coup de l'historique
         if (!historique.isEmpty()) {
             historique.remove(historique.size() - 1);
@@ -200,32 +205,47 @@ public class Jeu {
         return true;
     }
 
-    public boolean estEchecEtMat(PieceColor couleur) {
-        if (!plateau.estEnEchec(couleur)) return false;
-        return !aDesMouvementsValides(couleur);
-    }
-
-    public boolean estPat(PieceColor couleur) {
-        if (plateau.estEnEchec(couleur)) return false;
-        return !aDesMouvementsValides(couleur);
-    }
-
-    private boolean aDesMouvementsValides(PieceColor couleur) {
-        for (Piece p : plateau.getPieces()) {
-            if (p.getColor() == couleur) {
-                Case origine = p.getCurrentCase();
-                for (Case dest : p.getCasesAccessibles()) {
-                    Piece backup = dest.getPiece();
-                    dest.setPiece(p);
-                    origine.setPiece(null);
-                    boolean valide = !plateau.estEnEchec(couleur);
-                    origine.setPiece(p);
-                    dest.setPiece(backup);
-                    if (valide) return true;
-                }
-            }
+    /**
+     * Refait le dernier coup annulé.
+     * @return true si un coup a été refait, false sinon
+     */
+    public boolean refaireDernierCoup() {
+        if (commandesAnnulees.isEmpty()) {
+            return false;
         }
-        return false;
+
+        // Récupérer et exécuter la dernière commande annulée
+        Command dernierCoupAnnule = commandesAnnulees.pop();
+        dernierCoupAnnule.execute();
+
+        // Ajouter la commande à la pile des commandes exécutées
+        commandesExecutees.push(dernierCoupAnnule);
+
+        // Changer le joueur actuel
+        joueurActuel = (joueurActuel == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
+
+        // Notifier les observateurs
+        plateau.notifierObservers();
+
+        return true;
+    }
+
+    /**
+     * Vérifie si un joueur est en échec et mat en utilisant l'algorithme de backtracking.
+     * @param couleur La couleur du joueur
+     * @return true si le joueur est en échec et mat, false sinon
+     */
+    public boolean estEchecEtMat(PieceColor couleur) {
+        return MoveValidator.isCheckmate(plateau, couleur);
+    }
+
+    /**
+     * Vérifie si un joueur est en pat en utilisant l'algorithme de backtracking.
+     * @param couleur La couleur du joueur
+     * @return true si le joueur est en pat, false sinon
+     */
+    public boolean estPat(PieceColor couleur) {
+        return MoveValidator.isStalemate(plateau, couleur);
     }
 
     /**

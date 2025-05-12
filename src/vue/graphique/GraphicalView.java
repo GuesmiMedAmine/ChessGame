@@ -1,28 +1,38 @@
-package vue;
+package vue.graphique;
 
 import events.GameEndEvent;
 import events.GameEndListener;
 import events.NewGameEvent;
 import events.NewGameListener;
+import events.UndoEvent;
+import events.UndoListener;
+import events.RedoEvent;
+import events.RedoListener;
 import modele.jeu.Jeu;
 import modele.pieces.PieceColor;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
-import ui.ChessTimer;
+import vue.IView;
+import vue.VueBase;
+import vue.components.ChessTimer;
+import vue.components.NewGameButton;
+import vue.components.UndoButton;
+import vue.components.RedoButton;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 
 /**
- * Vue du plateau d'échecs, observe le modèle et gère l'affichage.
- * Étend la classe de base VueBase.
+ * Vue graphique du plateau d'échecs, observe le modèle et gère l'affichage.
+ * Étend la classe de base VueBase et implémente l'interface IView.
  */
-public class VueControleur extends VueBase {
+public class GraphicalView extends VueBase implements IView {
     private final Jeu jeu;
 
     // Sélection et coups possibles pour le highlight
@@ -32,13 +42,18 @@ public class VueControleur extends VueBase {
     // Composants UI additionnels
     private final ChessTimer chessTimer;
     private final JButton endGameButton;
+    private final NewGameButton newGameButton;
+    private final UndoButton undoButton;
+    private final RedoButton redoButton;
     private final JMenuBar menuBar;
 
     // Gestion des événements
     private final List<GameEndListener> gameEndListeners;
     private final List<NewGameListener> newGameListeners;
+    private final List<UndoListener> undoListeners;
+    private final List<RedoListener> redoListeners;
 
-    public VueControleur(Jeu jeu) {
+    public GraphicalView(Jeu jeu) {
         this.jeu = jeu;
         Plateau plateau = jeu.getPlateau();
         plateau.addObserver(this);
@@ -46,6 +61,8 @@ public class VueControleur extends VueBase {
         // Initialiser la liste des listeners
         this.gameEndListeners = new ArrayList<>();
         this.newGameListeners = new ArrayList<>();
+        this.undoListeners = new ArrayList<>();
+        this.redoListeners = new ArrayList<>();
 
         // Créer le layout principal
         setLayout(new BorderLayout());
@@ -67,10 +84,45 @@ public class VueControleur extends VueBase {
             }
         });
 
-        // Créer le panneau de contrôle (timer + bouton)
+        // Créer les boutons de nouvelle partie, undo et redo
+        this.newGameButton = new NewGameButton();
+        this.undoButton = new UndoButton();
+        this.redoButton = new RedoButton();
+
+        // Ajouter les listeners aux boutons
+        newGameButton.addNewGameListener(new NewGameListener() {
+            @Override
+            public void newGameRequested(NewGameEvent event) {
+                fireNewGameEvent(event.isProfessional());
+            }
+        });
+
+        undoButton.addUndoListener(new UndoListener() {
+            @Override
+            public void undoRequested(UndoEvent event) {
+                fireUndoEvent();
+            }
+        });
+
+        redoButton.addRedoListener(new RedoListener() {
+            @Override
+            public void redoRequested(RedoEvent event) {
+                fireRedoEvent();
+            }
+        });
+
+        // Créer le panneau de contrôle (timer + boutons)
         JPanel controlPanel = new JPanel(new BorderLayout());
         controlPanel.add(chessTimer, BorderLayout.CENTER);
-        controlPanel.add(endGameButton, BorderLayout.EAST);
+
+        // Créer un panneau pour les boutons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.add(undoButton);
+        buttonPanel.add(redoButton);
+        buttonPanel.add(newGameButton);
+        buttonPanel.add(endGameButton);
+
+        controlPanel.add(buttonPanel, BorderLayout.EAST);
         add(controlPanel, BorderLayout.NORTH);
 
         // Créer la barre de menu
@@ -180,6 +232,7 @@ public class VueControleur extends VueBase {
     /**
      * Définir la case sélectionnée et les déplacements valides à surligner.
      */
+    @Override
     public void selectCase(Case selected, List<Case> moves) {
         this.selectedCase = selected;
         this.validMoves   = moves;
@@ -188,10 +241,10 @@ public class VueControleur extends VueBase {
         repaint();
     }
 
-
     /**
      * Effacer la sélection et les surbrillances.
      */
+    @Override
     public void clearSelection() {
         this.selectedCase = null;
         if (validMoves != null) validMoves.clear();
@@ -215,6 +268,7 @@ public class VueControleur extends VueBase {
     /**
      * Démarre le timer pour le joueur actuel.
      */
+    @Override
     public void startTimer() {
         chessTimer.setActivePlayer(jeu.getJoueurActuel());
         chessTimer.startTimer();
@@ -223,6 +277,7 @@ public class VueControleur extends VueBase {
     /**
      * Arrête le timer.
      */
+    @Override
     public void stopTimer() {
         chessTimer.stopTimer();
     }
@@ -230,36 +285,73 @@ public class VueControleur extends VueBase {
     /**
      * Change le joueur actif du timer.
      */
+    @Override
     public void switchTimerPlayer() {
         chessTimer.switchPlayer();
     }
 
     /**
-     * Ajoute un listener pour les événements de fin de partie.
+     * Ajoute un écouteur pour les événements de fin de partie.
      */
+    @Override
     public void addGameEndListener(GameEndListener listener) {
         gameEndListeners.add(listener);
     }
 
     /**
-     * Retire un listener pour les événements de fin de partie.
+     * Retire un écouteur pour les événements de fin de partie.
      */
+    @Override
     public void removeGameEndListener(GameEndListener listener) {
         gameEndListeners.remove(listener);
     }
 
     /**
-     * Ajoute un listener pour les événements de nouvelle partie.
+     * Ajoute un écouteur pour les événements de nouvelle partie.
      */
+    @Override
     public void addNewGameListener(NewGameListener listener) {
         newGameListeners.add(listener);
     }
 
     /**
-     * Retire un listener pour les événements de nouvelle partie.
+     * Retire un écouteur pour les événements de nouvelle partie.
      */
+    @Override
     public void removeNewGameListener(NewGameListener listener) {
         newGameListeners.remove(listener);
+    }
+
+    /**
+     * Ajoute un écouteur pour les événements d'annulation.
+     */
+    @Override
+    public void addUndoListener(UndoListener listener) {
+        undoListeners.add(listener);
+    }
+
+    /**
+     * Retire un écouteur pour les événements d'annulation.
+     */
+    @Override
+    public void removeUndoListener(UndoListener listener) {
+        undoListeners.remove(listener);
+    }
+
+    /**
+     * Ajoute un écouteur pour les événements de rétablissement.
+     */
+    @Override
+    public void addRedoListener(RedoListener listener) {
+        redoListeners.add(listener);
+    }
+
+    /**
+     * Retire un écouteur pour les événements de rétablissement.
+     */
+    @Override
+    public void removeRedoListener(RedoListener listener) {
+        redoListeners.remove(listener);
     }
 
     /**
@@ -281,6 +373,26 @@ public class VueControleur extends VueBase {
         NewGameEvent event = new NewGameEvent(this, isProfessional);
         for (NewGameListener listener : newGameListeners) {
             listener.newGameRequested(event);
+        }
+    }
+
+    /**
+     * Déclenche un événement d'annulation.
+     */
+    private void fireUndoEvent() {
+        UndoEvent event = new UndoEvent(this);
+        for (UndoListener listener : undoListeners) {
+            listener.undoRequested(event);
+        }
+    }
+
+    /**
+     * Déclenche un événement de rétablissement.
+     */
+    private void fireRedoEvent() {
+        RedoEvent event = new RedoEvent(this);
+        for (RedoListener listener : redoListeners) {
+            listener.redoRequested(event);
         }
     }
 }

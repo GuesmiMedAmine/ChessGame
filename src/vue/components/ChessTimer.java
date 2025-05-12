@@ -1,4 +1,4 @@
-package ui;
+package vue.components;
 
 import modele.pieces.PieceColor;
 

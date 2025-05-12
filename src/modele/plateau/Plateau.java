@@ -10,7 +10,7 @@ import modele.pieces.*;
  * Représente l’échiquier, stocke les cases et la liste des pièces,
  * et définit les directions via un enum interne.
  */
-public class Plateau extends Observable {
+public class Plateau extends Observable implements Cloneable {
     public static final int SIZE = 8;
 
     private final Case[][] cases;
@@ -123,5 +123,79 @@ public class Plateau extends Observable {
             }
         }
         return null;
+    }
+
+    /**
+     * Crée une copie profonde du plateau.
+     * Cette méthode est utilisée pour simuler des coups sans modifier le plateau original.
+     * @return Une copie profonde du plateau
+     */
+    @Override
+    public Plateau clone() {
+        try {
+            Plateau clone = (Plateau) super.clone();
+
+            // Créer un nouveau tableau de cases
+            Case[][] clonedCases = new Case[SIZE][SIZE];
+            for (int x = 0; x < SIZE; x++) {
+                for (int y = 0; y < SIZE; y++) {
+                    clonedCases[x][y] = new Case(x, y);
+                }
+            }
+
+            // Créer une nouvelle liste de pièces
+            List<Piece> clonedPieces = new ArrayList<>();
+
+            // Copier les pièces et les placer sur les cases clonées
+            for (Piece originalPiece : pieces) {
+                // Créer une nouvelle pièce du même type
+                Piece clonedPiece = null;
+
+                switch (originalPiece.getType()) {
+                    case ROI:
+                        clonedPiece = new Roi(originalPiece.getX(), originalPiece.getY(), 
+                                             originalPiece.getColor(), clone);
+                        break;
+                    case DAME:
+                        clonedPiece = new Dame(originalPiece.getX(), originalPiece.getY(), 
+                                              originalPiece.getColor(), clone);
+                        break;
+                    case TOUR:
+                        clonedPiece = new Tour(originalPiece.getX(), originalPiece.getY(), 
+                                              originalPiece.getColor(), clone);
+                        break;
+                    case FOU:
+                        clonedPiece = new Fou(originalPiece.getX(), originalPiece.getY(), 
+                                             originalPiece.getColor(), clone);
+                        break;
+                    case CAVALIER:
+                        clonedPiece = new Cavalier(originalPiece.getX(), originalPiece.getY(), 
+                                                  originalPiece.getColor(), clone);
+                        break;
+                    case PION:
+                        clonedPiece = new Pion(originalPiece.getX(), originalPiece.getY(), 
+                                              originalPiece.getColor(), clone);
+                        break;
+                }
+
+                if (clonedPiece != null) {
+                    clonedPieces.add(clonedPiece);
+                    clonedCases[clonedPiece.getX()][clonedPiece.getY()].setPiece(clonedPiece);
+                }
+            }
+
+            // Utiliser la réflexion pour définir les champs privés finaux
+            java.lang.reflect.Field casesField = Plateau.class.getDeclaredField("cases");
+            casesField.setAccessible(true);
+            casesField.set(clone, clonedCases);
+
+            java.lang.reflect.Field piecesField = Plateau.class.getDeclaredField("pieces");
+            piecesField.setAccessible(true);
+            piecesField.set(clone, clonedPieces);
+
+            return clone;
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors du clonage du plateau", e);
+        }
     }
 }
