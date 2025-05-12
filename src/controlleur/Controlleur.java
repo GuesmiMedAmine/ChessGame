@@ -37,13 +37,6 @@ public class Controlleur implements GameEndListener, NewGameListener, UndoListen
     private JFrame frame;
     private boolean isGraphicalView;
 
-    /**
-     * Constructeur qui crée un nouveau Jeu, instancie la Vue, et branche les gestionnaires de clics.
-     * Par défaut, utilise la vue graphique.
-     */
-    public Controlleur() {
-        this(true);
-    }
 
     /**
      * Constructeur qui crée un nouveau Jeu, instancie la Vue, et branche les gestionnaires de clics.
