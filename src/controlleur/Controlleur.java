@@ -1,74 +1,127 @@
+// controlleur/Controlleur.java
 package controlleur;
 
 import modele.jeu.Jeu;
+import modele.pieces.PieceColor;
+import modele.plateau.Case;
+import utils.ThreadManager;
+import vue.VueControleur;
 
-import java.util.Observable;
-import java.util.Observer;
+import java.awt.Point;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JOptionPane;
 
 /**
- * Controlleur de parties : singleton qui initialise et pilote
- * le thread de chaque nouvelle partie.
+ * Contrôleur central du jeu.
+ * Initialise modèle et vue, et orchestre les clics de la souris.
  */
-public class Controlleur implements Observer {
-    private static final Controlleur instance = new Controlleur();
-
-    private Jeu jeu;
-    private Thread gameThread;
-
-    /** Accès unique au contrôleur */
-    public static Controlleur getInstance() {
-        return instance;
-    }
-
-    // Constructeur privé pour garantir le singleton
-    private Controlleur() { }
+public class Controlleur {
+    private final Jeu jeu;
+    private final VueControleur vue;
 
     /**
-     * Initialise une nouvelle partie :
-     *  - interrompt celle en cours,
-     *  - crée le Jeu,
-     *  - s'abonne aux changements du Plateau,
-     *  - démarre un thread dédié.
+     * Constructeur qui crée un nouveau Jeu, instancie la Vue, et branche les gestionnaires de clics.
      */
-    public synchronized void initJeu() {
-        // Arrêter l’ancienne partie si besoin
-        stopPartie();
-
-        // Créer le modèle de jeu
+    public Controlleur() {
+        // Modèle
         this.jeu = new Jeu();
-        // S’abonner aux notifications du plateau
-        jeu.getPlateau().addObserver(this);
-
-        // Tâche de gestion (à enrichir selon besoin)
-        Runnable gameTask = () -> {
-            System.out.println("Partie démarrée [" + Thread.currentThread().getName() + "]");
-            // Boucle / logique périodique ici
-        };
-
-        gameThread = new Thread(gameTask, "JeuThread-" + System.currentTimeMillis());
-        gameThread.start();
+        // Vue, injectée avec le modèle
+        this.vue = new VueControleur(jeu);
+        // Lier les clics
+        vue.addCaseClickListener(new CaseClickHandler());
     }
 
-    /** Interrompt proprement le thread de la partie en cours. */
-    public synchronized void stopPartie() {
-        if (gameThread != null && gameThread.isAlive()) {
-            gameThread.interrupt();
-            System.out.println("Partie interrompue [" + gameThread.getName() + "]");
-        }
-    }
-
-    /** @return l’objet Jeu de la partie active (ou null s’il n’est pas encore initialisé) */
-    public Jeu getJeu() {
-        return jeu;
+    public VueControleur getVue() {
+        return vue;
     }
 
     /**
-     * Callback appelé à chaque modification du Plateau.
-     * @param o   l’Observable (le Plateau)
-     * @param arg argument facultatif
+     * Handler des clics sur les cases : sélection, tentative de coup.
      */
-    @Override
-    public void update(Observable o, Object arg) {
-        System.out.println("Plateau mis à jour -> " + arg);
+    private class CaseClickHandler extends MouseAdapter {
+        private Case selectedCase;
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            // Si la partie est terminée, ne rien faire
+            if (jeu.estPartieTerminee()) {
+                return;
+            }
+
+            // Récupérer la position (x,y) depuis la propriété client
+            Object prop = e.getSource();
+            var lbl = (javax.swing.JLabel) prop;
+            Point pt = (Point) lbl.getClientProperty("pos");
+            Case clicked = jeu.getPlateau().getCase(pt.x, pt.y);
+
+            if (selectedCase == null) {
+                // 1ère sélection : si une pièce du joueur courant
+                if (clicked.getPiece() != null
+                        && clicked.getPiece().getColor() == jeu.getJoueurActuel()) {
+                    selectedCase = clicked;
+
+                    // Calculer les coups valides en arrière-plan
+                    ThreadManager.getInstance().executeInBackgroundThenOnEDT(
+                        // Tâche en arrière-plan
+                        () -> {
+                            // Récupérer les coups valides (pas besoin de retourner, on les recalcule dans l'EDT)
+                            clicked.getPiece().getCasesAccessibles();
+                        },
+                        // Tâche sur l'EDT une fois terminée
+                        () -> {
+                            // Indiquer à la vue la sélection et les déplacements possibles
+                            vue.selectCase(selectedCase, clicked.getPiece().getCasesAccessibles());
+                        }
+                    );
+                }
+            } else {
+                // 2ème clic : tenter le coup
+                final Case depart = selectedCase;
+                final Case arrivee = clicked;
+
+                // Effacer la sélection immédiatement pour feedback utilisateur
+                selectedCase = null;
+                vue.clearSelection();
+
+                // Jouer le coup en arrière-plan
+                ThreadManager.getInstance().executeInBackgroundThenOnEDT(
+                    // Tâche en arrière-plan
+                    () -> {
+                        // Jouer le coup (pas besoin de retourner la valeur)
+                        jeu.jouerCoup(depart, arrivee);
+                    },
+                    // Tâche sur l'EDT une fois terminée
+                    () -> {
+                        // Vérifier si la partie est terminée après le coup
+                        if (jeu.estPartieTerminee()) {
+                            afficherFinPartie();
+                        }
+                    }
+                );
+            }
+        }
+
+        /**
+         * Affiche un message de fin de partie.
+         */
+        private void afficherFinPartie() {
+            PieceColor vainqueur = jeu.getVainqueur();
+            String message;
+
+            if (vainqueur != null) {
+                String couleurGagnante = (vainqueur == PieceColor.WHITE ? "Blanc" : "Noir");
+                message = "ÉCHEC ET MAT ! Les " + couleurGagnante + "s ont gagné la partie !";
+            } else {
+                message = "PAT ! La partie est nulle.";
+            }
+
+            // Afficher le message dans une boîte de dialogue
+            javax.swing.JOptionPane.showMessageDialog(vue, message, "Fin de partie", 
+                                                     javax.swing.JOptionPane.INFORMATION_MESSAGE);
+
+            // Afficher également dans la console
+            System.out.println("\n" + message);
+        }
     }
 }

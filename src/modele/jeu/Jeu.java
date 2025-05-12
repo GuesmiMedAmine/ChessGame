@@ -7,7 +7,7 @@ import modele.plateau.Plateau;
 import modele.plateau.Case;
 import modele.pieces.*;
 import modele.pieces.PieceColor;
-
+import java.util.Observable;
 /**
  * Logique de la partie : historique, tour de jeu, validation, etc.
  * L'initialisation des pièces se fait désormais dans Plateau.
@@ -31,6 +31,34 @@ public class Jeu {
         return joueurActuel;
     }
 
+    /**
+     * Vérifie si le joueur spécifié est en échec.
+     * @param couleur Couleur du joueur à vérifier
+     * @return true si le joueur est en échec
+     */
+    public boolean estEnEchec(PieceColor couleur) {
+        return plateau.estEnEchec(couleur);
+    }
+
+    /**
+     * Vérifie si la partie est terminée (échec et mat ou pat).
+     * @return true si la partie est terminée
+     */
+    public boolean estPartieTerminee() {
+        return estEchecEtMat(PieceColor.WHITE) || estEchecEtMat(PieceColor.BLACK) 
+               || estPat(PieceColor.WHITE) || estPat(PieceColor.BLACK);
+    }
+
+    /**
+     * Retourne le vainqueur de la partie, ou null si la partie n'est pas terminée ou est nulle.
+     * @return La couleur du vainqueur, ou null
+     */
+    public PieceColor getVainqueur() {
+        if (estEchecEtMat(PieceColor.WHITE)) return PieceColor.BLACK;
+        if (estEchecEtMat(PieceColor.BLACK)) return PieceColor.WHITE;
+        return null;
+    }
+
     public boolean jouerCoup(Case depart, Case arrivee) {
         if (depart.getPiece() == null) return false;
         Piece piece = depart.getPiece();
@@ -46,7 +74,12 @@ public class Jeu {
 
         Coup coup = new Coup(piece, arrivee, isRoque, isEnPassant);
         historique.add(coup);
-        System.out.println("Joueur " + joueurActuel + " joue: " + coup);
+
+        // Afficher le coup dans la console
+        String typeMove = isRoque ? "roque" : (isEnPassant ? "prise en passant" : "déplacement");
+        System.out.println(joueurActuel + " joue : " + piece.getType() + " de " + 
+                           notationAlgebrique(depart) + " à " + notationAlgebrique(arrivee) + 
+                           " (" + typeMove + ")");
 
         if (isRoque) {
             executerRoque((Roi) piece, arrivee);
@@ -65,15 +98,22 @@ public class Jeu {
         PieceColor adversaire = joueurActuel;
         joueurActuel = (joueurActuel == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
 
-        if (plateau.estEnEchec(adversaire)) {
-            System.out.println("Échec au joueur " + adversaire + " !");
+        // Vérifier les conditions de fin de partie
+        boolean estEnEchec = plateau.estEnEchec(adversaire);
+        boolean estMat = estEchecEtMat(adversaire);
+        boolean estPat = estPat(adversaire);
+
+        // Afficher l'état du jeu dans la console
+        if (estEnEchec) {
+            System.out.println(adversaire + " est en échec!");
         }
-        if (estEchecEtMat(adversaire)) {
-            System.out.println("Échec et mat ! Joueur " + adversaire + " perd.");
-        } else if (estPat(adversaire)) {
-            System.out.println("Pat ! Match nul.");
+        if (estMat) {
+            System.out.println("ÉCHEC ET MAT! " + joueurActuel + " a gagné la partie!");
+        } else if (estPat) {
+            System.out.println("PAT! La partie est nulle.");
         }
 
+        plateau.notifierObservers();
         return true;
     }
 
@@ -116,7 +156,7 @@ public class Jeu {
     private boolean aDesMouvementsValides(PieceColor couleur) {
         for (Piece p : plateau.getPieces()) {
             if (p.getColor() == couleur) {
-                Case origine = plateau.getCase(p.getX(), p.getY());
+                Case origine = p.getCurrentCase();
                 for (Case dest : p.getCasesAccessibles()) {
                     Piece backup = dest.getPiece();
                     dest.setPiece(p);
@@ -129,5 +169,16 @@ public class Jeu {
             }
         }
         return false;
+    }
+
+    /**
+     * Convertit une case en notation algébrique (ex: "e4").
+     * @param c La case à convertir
+     * @return La notation algébrique de la case
+     */
+    private String notationAlgebrique(Case c) {
+        char colonne = (char) ('a' + c.getX());
+        int ligne = c.getY() + 1;
+        return colonne + "" + ligne;
     }
 }

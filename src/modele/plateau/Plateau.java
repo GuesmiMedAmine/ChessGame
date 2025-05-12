@@ -67,6 +67,10 @@ public class Plateau extends Observable {
             c.setPiece(p);
         }
     }
+    public void notifierObservers() {
+        setChanged();           // accessible ici, car on est dans Plateau
+        notifyObservers();      // ou notifyObservers(arg) si vous voulez passer un paramètre
+    }
 
     public Case getCase(int x, int y) {
         if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return null;
@@ -81,12 +85,31 @@ public class Plateau extends Observable {
         return pieces;
     }
 
+    /**
+     * Vérifie si le roi de la couleur spécifiée est en échec.
+     * @param couleurJoueur Couleur du joueur à vérifier
+     * @return true si le roi est en échec
+     */
     public boolean estEnEchec(PieceColor couleurJoueur) {
+        return estEnEchec(couleurJoueur, true);
+    }
+
+    /**
+     * Vérifie si le roi de la couleur spécifiée est en échec.
+     * @param couleurJoueur Couleur du joueur à vérifier
+     * @param checkKingMoves Si true, vérifie aussi les mouvements des rois adverses
+     * @return true si le roi est en échec
+     */
+    public boolean estEnEchec(PieceColor couleurJoueur, boolean checkKingMoves) {
         Case roi = getRoi(couleurJoueur);
         if (roi == null) return false;
         PieceColor adv = (couleurJoueur == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
         for (Piece p : pieces) {
             if (p.getColor() == adv) {
+                // Si on ne vérifie pas les mouvements des rois ou si la pièce n'est pas un roi
+                if (!checkKingMoves && p.getType() == PieceType.ROI) {
+                    continue;
+                }
                 if (p.getCasesAccessibles().contains(roi)) return true;
             }
         }

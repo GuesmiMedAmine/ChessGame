@@ -34,7 +34,7 @@ public abstract class Piece {
 
     /** Chemin par défaut de l’image selon couleur/type */
     protected void setImagePath() {
-        this.imagePath = "/images/"
+        this.imagePath = "/Images/"
                 + (color == PieceColor.WHITE ? "w" : "b")
                 + type.getLetter()
                 + ".png";
@@ -52,6 +52,14 @@ public abstract class Piece {
     public PieceType getType()   { return type; }
     public String getImagePath(){ return imagePath; }
     public Plateau getPlateau()  { return plateau; }
+
+    /**
+     * Retourne la case sur laquelle se trouve la pièce.
+     * @return La case actuelle de la pièce
+     */
+    public Case getCurrentCase() {
+        return plateau.getCase(x, y);
+    }
 
     public void setPosition(int x, int y) {
         this.x = x;

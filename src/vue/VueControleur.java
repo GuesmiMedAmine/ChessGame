@@ -1,101 +1,108 @@
 package vue;
 
-import controlleur.Controlleur;
-import modele.plateau.Case;
 import modele.jeu.Jeu;
+import modele.plateau.Case;
+import modele.plateau.Plateau;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
 
-public class VueControleur extends JPanel {
-    // On récupère l'instance de Jeu via le contrôleur
-    private final Jeu jeu = Controlleur.getInstance().getJeu();
-    private final JLabel[][] grid;
+/**
+ * Vue du plateau d'échecs, observe le modèle et gère l'affichage.
+ * Étend la classe de base VueBase.
+ */
+public class VueControleur extends VueBase {
+    private final Jeu jeu;
+
+    // Sélection et coups possibles pour le highlight
     private Case selectedCase;
-    private List<Case> validMoves = new ArrayList<>();
+    private List<Case> validMoves;
 
-    public VueControleur() {
-        grid = new JLabel[8][8];
+    public VueControleur(Jeu jeu) {
+        this.jeu = jeu;
+        Plateau plateau = jeu.getPlateau();
+        plateau.addObserver(this);
         setLayout(new GridLayout(8, 8));
-        initialiserUI();
-        rafraichirUI();
+        initUI();
+        update(plateau, null);
     }
 
-    private void initialiserUI() {
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                JLabel lbl = new JLabel();
-                lbl.setOpaque(true);
-                lbl.setPreferredSize(new Dimension(80, 80));
-                lbl.setHorizontalAlignment(SwingConstants.CENTER);
-                lbl.setVerticalAlignment(SwingConstants.CENTER);
+    /**
+     * Met à jour l'affichage : pièces, sélection et coups possibles.
+     */
+    @Override
+    public void update(Observable o, Object arg) {
+        Plateau p = (Plateau) o;
 
-                final int x = i, y = j;
-                lbl.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        gererClicCase(x, y);
-                    }
-                });
+        // Mettre à jour les pièces en utilisant la méthode de la classe de base
+        updatePieces(p);
 
-                grid[i][j] = lbl;
-                add(lbl);
-            }
-        }
+        // Ajouter la surbrillance pour la sélection et les coups valides
+        highlightSelection(p);
+
+        revalidate();
+        repaint();
     }
 
-    private void gererClicCase(int x, int y) {
-        Case clickedCase = jeu.getPlateau().getCase(x, y);
+    /**
+     * Ajoute la surbrillance pour la case sélectionnée, les coups valides,
+     * et les rois en échec.
+     */
+    private void highlightSelection(Plateau p) {
+        // Récupérer les cases des rois
+        Case roiBlanc = p.getRoi(modele.pieces.PieceColor.WHITE);
+        Case roiNoir = p.getRoi(modele.pieces.PieceColor.BLACK);
 
-        if (selectedCase == null) {
-            if (clickedCase.getPiece() != null &&
-                    clickedCase.getPiece().getColor() == jeu.getJoueurActuel()) {
-                selectedCase = clickedCase;
-                validMoves = selectedCase.getPiece().getCasesAccessibles();
-            }
-        } else {
-            if (validMoves.contains(clickedCase)) {
-                jeu.jouerCoup(selectedCase, clickedCase);
-            }
-            selectedCase = null;
-            validMoves.clear();
-            getParent().repaint();
-        }
-        rafraichirUI();
-    }
+        // Vérifier si les rois sont en échec
+        boolean roiBlancEnEchec = jeu.estEnEchec(modele.pieces.PieceColor.WHITE);
+        boolean roiNoirEnEchec = jeu.estEnEchec(modele.pieces.PieceColor.BLACK);
 
-    private void rafraichirUI() {
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                JLabel lbl = grid[i][j];
-                Case c = jeu.getPlateau().getCase(i, j);
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                JLabel lbl = grid[x][y];
+                Case c = p.getCase(x, y);
 
-                lbl.setBackground((i + j) % 2 == 0
-                        ? new Color(238, 238, 210)
-                        : new Color(118, 150, 86));
-                lbl.setIcon(null);
-                lbl.setBorder(null);
+                // Réinitialiser le fond avec la couleur de base
+                lbl.setBackground(getCaseColor(x, y));
 
-                if (c.getPiece() != null && !validMoves.contains(c)) {
-                    ImageIcon icon = new ImageIcon(
-                            getClass().getResource(c.getPiece().getImagePath())
-                    );
-                    Image img = icon.getImage()
-                            .getScaledInstance(70, 70, Image.SCALE_SMOOTH);
-                    lbl.setIcon(new ImageIcon(img));
-                }
-
+                // Surbrillance sélection et coups valides
                 if (selectedCase != null && selectedCase.equals(c)) {
                     lbl.setBackground(new Color(255, 255, 0, 150));
-                } else if (validMoves.contains(c)) {
+                } else if (validMoves != null && validMoves.contains(c)) {
                     lbl.setBackground(new Color(144, 238, 144, 150));
-                    lbl.setIcon(null);
                 }
+
+                // Surbrillance rouge pour les rois en échec
+                if ((roiBlancEnEchec && c.equals(roiBlanc)) || 
+                    (roiNoirEnEchec && c.equals(roiNoir))) {
+                    lbl.setBackground(new Color(255, 0, 0, 150));
+                }
+
+                lbl.setBorder(null);
             }
         }
+    }
+
+    /**
+     * Définir la case sélectionnée et les déplacements valides à surligner.
+     */
+    public void selectCase(Case selected, List<Case> moves) {
+        this.selectedCase = selected;
+        this.validMoves   = moves;
+        highlightSelection(jeu.getPlateau());
+        revalidate();
+        repaint();
+    }
+
+
+    /**
+     * Effacer la sélection et les surbrillances.
+     */
+    public void clearSelection() {
+        this.selectedCase = null;
+        if (validMoves != null) validMoves.clear();
         repaint();
     }
 }
